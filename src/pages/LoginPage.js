@@ -12,7 +12,6 @@ const LoginPage = () => {
         e.preventDefault();
 
         try {
-            // 🔐 Надсилаємо запит на логін
             const response = await axios.post('http://localhost:8080/api/auth/login', {
                 username,
                 password
@@ -21,17 +20,15 @@ const LoginPage = () => {
             const { token } = response.data;
             localStorage.setItem('jwt', token);
 
-            // 👤 Отримуємо профіль після логіну
             const profileResponse = await axios.get('http://localhost:8080/api/user/me', {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
 
-            const roles = profileResponse.data.roles.map(role => role.name);
+            const roles = profileResponse.data.roles;
 
-            // 👮‍♂️ Редирект в залежності від ролі
-            if (roles.includes('ROLE_ADMIN')) {
+            if (roles.includes('ADMIN')) {
                 navigate('/admin');
             } else {
                 navigate('/profile');
