@@ -51,7 +51,7 @@ const AllUsersPage = () => {
 
         if (!newUsername || !newPhone) return;
 
-        axios.put(`http://localhost:8080/api/user/${user.id}`, {
+        axios.put(`http://localhost:8080/api/admin/update/${user.id}`, {
             ...user,
             username: newUsername,
             phone: newPhone
