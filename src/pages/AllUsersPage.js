@@ -3,69 +3,101 @@ import axios from 'axios';
 
 const AllUsersPage = () => {
     const [users, setUsers] = useState([]);
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const token = localStorage.getItem('jwt');
 
     useEffect(() => {
-        const token = localStorage.getItem('jwt');
-
-        axios.get('http://localhost:8080/api/admin/users', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            }
-        })
-            .then(res => {
-                setUsers(res.data);
-            })
-            .catch(() => {
-                setError('Доступ заборонено або не вдалося завантажити користувачів.');
-            })
-            .finally(() => {
-                setLoading(false);
-            });
+        fetchUsers();
     }, []);
 
-    if (loading) return (
-        <div className="d-flex justify-content-center align-items-center mt-5">
-            <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Завантаження...</span>
-            </div>
-        </div>
-    );
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get('http://localhost:8080/api/admin/users', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log('Users from API:', response.data); // <- проверь структуру
+            setUsers(response.data);
+        } catch {
+            setError('Помилка завантаження користувачів');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (error) return (
-        <div className="alert alert-danger text-center mt-4" role="alert">
-            {error}
-        </div>
-    );
+    const handleDelete = async (id) => {
+        console.log('Delete clicked, id:', id);
+        if (!id) {
+            console.error("id пользователя для удаления не задан");
+            return;
+
+        }
+        try {
+            await axios.delete(`http://localhost:8080/api/admin/delete/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsers(prev => prev.filter(user => user.id !== id));
+        } catch (e) {
+            console.error(e);
+            alert('Не вдалося видалити користувача');
+        }
+    };
+
+    const handleUpdate = (user) => {
+        const newUsername = prompt("Нове ім'я користувача:", user.username);
+        const newPhone = prompt("Новий телефон:", user.phone);
+
+        if (!newUsername || !newPhone) return;
+
+        axios.put(`http://localhost:8080/api/user/${user.id}`, {
+            ...user,
+            username: newUsername,
+            phone: newPhone
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        }).then(() => {
+            fetchUsers(); // оновити таблицю
+        }).catch(() => {
+            alert('Не вдалося оновити користувача');
+        });
+    };
+
+    if (loading) return <p>Завантаження...</p>;
+    if (error) return <p className="text-danger">{error}</p>;
 
     return (
         <div className="container mt-5">
-            <div className="card shadow">
-                <div className="card-header bg-primary text-white">
-                    <h4 className="mb-0">Список усіх користувачів</h4>
-                </div>
-                <div className="card-body p-0">
-                    <table className="table table-hover table-striped mb-0">
-                        <thead className="table-light">
-                        <tr>
-                            <th scope="col">Ім'я користувача</th>
-                            <th scope="col">Телефон</th>
-                            <th scope="col">Ролі</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {users.map((user, idx) => (
-                            <tr key={idx}>
-                                <td>{user.username}</td>
-                                <td>{user.phone}</td>
-                                <td>{user.roles.join(', ')}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <h3>Список користувачів</h3>
+            <table className="table table-bordered">
+                <thead>
+                <tr>
+                    <th>Ім’я</th>
+                    <th>Телефон</th>
+                    <th>Ролі</th>
+                    <th>Дії</th>
+                </tr>
+                </thead>
+                <tbody>
+                {users.map(user => (
+                    <tr key={user.id}>
+                        <td>{user.username}</td>
+                        <td>{user.phone}</td>
+                        <td>{Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}</td>
+                        <td>
+                            <td>
+                                <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdate(user)}>Редагувати</button>
+                                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(user.id)}>Видалити</button>
+                            </td>
+
+
+                        </td>
+                    </tr>
+                ))}
+
+                </tbody>
+            </table>
         </div>
     );
 };
