@@ -8,30 +8,45 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
 
         try {
-            const res = await axios.post('http://localhost:8080/api/auth/login', {
+            // 🔐 Надсилаємо запит на логін
+            const response = await axios.post('http://localhost:8080/api/auth/login', {
                 username,
-                password,
+                password
             });
 
-            const token = res.data.token;
+            const { token } = response.data;
             localStorage.setItem('jwt', token);
 
-            // 🔁 Переход на профиль
-            navigate('/profile');
+            // 👤 Отримуємо профіль після логіну
+            const profileResponse = await axios.get('http://localhost:8080/api/user/me', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const roles = profileResponse.data.roles.map(role => role.name);
+
+            // 👮‍♂️ Редирект в залежності від ролі
+            if (roles.includes('ROLE_ADMIN')) {
+                navigate('/admin');
+            } else {
+                navigate('/profile');
+            }
+
         } catch (err) {
-            setError('Invalid credentials');
+            setError('Invalid credentials. Try again.');
         }
     };
 
     return (
         <div className="container mt-5" style={{ maxWidth: '400px' }}>
-            <h3>Login</h3>
+            <h3 className="mb-4">Login</h3>
             {error && <div className="alert alert-danger">{error}</div>}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleLogin}>
                 <div className="mb-3">
                     <label className="form-label">Username</label>
                     <input
@@ -52,7 +67,7 @@ const LoginPage = () => {
                         required
                     />
                 </div>
-                <button type="submit" className="btn btn-primary">Login</button>
+                <button type="submit" className="btn btn-primary w-100">Login</button>
             </form>
         </div>
     );
