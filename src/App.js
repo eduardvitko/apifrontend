@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import AllUsersPage from './pages/AllUsersPage';
+import AllCategoriesPage from "./pages/AllCategoriesPage";
 
 
 
@@ -18,6 +19,7 @@ function App() {
                     <Link className="nav-link" to="/register">Register</Link>
                     <Link className="nav-link" to="/login">Login</Link>
                     <Link className="nav-link" to="/profile">Profile</Link>
+                    <Link className="nav-link" to="/allCategories">Categories</Link>
 
                 </div>
             </nav>
@@ -29,6 +31,7 @@ function App() {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/admin/users" element={<AllUsersPage />} />
+                    <Route path="/allCategories" element={<AllCategoriesPage />} />
                 </Routes>
             </div>
         </Router>
