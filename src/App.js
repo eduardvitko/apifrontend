@@ -32,6 +32,7 @@ function App() {
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/admin/users" element={<AllUsersPage />} />
                     <Route path="/allCategories" element={<AllCategoriesPage />} />
+                    <Route path="/admin/categories" element={<AllCategoriesPage />} />
                 </Routes>
             </div>
         </Router>
