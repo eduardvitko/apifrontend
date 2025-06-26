@@ -10,6 +10,8 @@ import AllCategoriesPage from "./pages/AllCategoriesPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 // Если AllProductsPage.js лежит в src/pages/
 import AllProductsPage from './pages/AllProductsPage';
+import CreateProductPage from './pages/CreateProductPage';
+import UpdateProductPage from './pages/UpdateProductPage';
 
 
 
@@ -39,6 +41,8 @@ function App() {
                     <Route path="/allCategories" element={<AllCategoriesPage />} />
                     <Route path="/admin/categories" element={<AdminCategoriesPage />} />
                     <Route path="/admin/products" element={<AllProductsPage />} />
+                    <Route path="/admin/products/create" element={<CreateProductPage />} />
+                    <Route path="/admin/products/update/:id" element={<UpdateProductPage />} />
                 </Routes>
             </div>
         </Router>

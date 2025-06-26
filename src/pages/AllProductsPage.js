@@ -87,7 +87,7 @@ const AllProductsPage = () => {
                         <td>
                             <button
                                 className="btn btn-sm btn-warning me-2"
-                                onClick={() => handleUpdate(product)}
+                                onClick={() => navigate(`/admin/products/update/${product.id}`)}
                             >
                                 Редагувати
                             </button>
