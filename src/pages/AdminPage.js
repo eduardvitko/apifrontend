@@ -1,6 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const AdminPage = () => {
     const navigate = useNavigate();
@@ -9,10 +8,14 @@ const AdminPage = () => {
     const goToAllUsers = () => {
         navigate('/admin/users');
     };
+
     const goToAllCategories = () => {
-        navigate('/categories/all');
+        navigate('/admin/categories');
     };
 
+    const goToAllProducts = () => {
+        navigate('/admin/products'); // <-- цей маршрут має вести на AllProductsPage
+    };
 
     return (
         <div className="container mt-5">
@@ -22,11 +25,20 @@ const AdminPage = () => {
                 </div>
                 <div className="card-body">
                     <p>Вітаємо, Адміністраторе!</p>
-                    <button onClick={goToAllUsers} className="btn btn-primary">
+
+                    <button onClick={goToAllUsers} className="btn btn-primary mb-2">
                         Переглянути всіх користувачів
                     </button>
-                    <Link className="btn btn-secondary m-2" to="/admin/categories">Категорії</Link>
+                    <br />
 
+                    <button onClick={goToAllCategories} className="btn btn-secondary mb-2">
+                        Категорії
+                    </button>
+                    <br />
+
+                    <button onClick={goToAllProducts} className="btn btn-success">
+                        Всі товари
+                    </button>
                 </div>
             </div>
         </div>

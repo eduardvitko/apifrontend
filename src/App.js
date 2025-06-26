@@ -8,6 +8,9 @@ import AdminPage from './pages/AdminPage';
 import AllUsersPage from './pages/AllUsersPage';
 import AllCategoriesPage from "./pages/AllCategoriesPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
+// Если AllProductsPage.js лежит в src/pages/
+import AllProductsPage from './pages/AllProductsPage';
+
 
 
 
@@ -35,6 +38,7 @@ function App() {
                     <Route path="/admin/users" element={<AllUsersPage />} />
                     <Route path="/allCategories" element={<AllCategoriesPage />} />
                     <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+                    <Route path="/admin/products" element={<AllProductsPage />} />
                 </Routes>
             </div>
         </Router>

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // ← Важно: импорт навигации
 
 const AllUsersPage = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    const navigate = useNavigate();
 
     const token = localStorage.getItem('jwt');
 
@@ -69,6 +72,12 @@ const AllUsersPage = () => {
 
     return (
         <div className="container mt-5">
+            <button
+                className="btn btn-outline-secondary"
+                onClick={() => navigate('/admin')}
+            >
+                Назад
+            </button>
             <h3>Список користувачів</h3>
             <table className="table table-bordered">
                 <thead>

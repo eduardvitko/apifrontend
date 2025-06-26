@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // ← Важно: импорт навигации
 
 const AdminCategoriesPage = () => {
     const [categories, setCategories] = useState([]);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [editingCategory, setEditingCategory] = useState(null);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchCategories();
@@ -58,7 +61,12 @@ const AdminCategoriesPage = () => {
     return (
         <div className="container mt-4">
             <h1>Категории товаров</h1>
-
+            <button
+                className="btn btn-outline-secondary"
+                onClick={() => navigate('/admin')}
+            >
+                Назад
+            </button>
             <form onSubmit={handleSubmit} className="d-flex mb-3">
                 <input
                     type="text"
