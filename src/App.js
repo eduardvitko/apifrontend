@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import RegisterPage from './pages/RegisterPage';
@@ -6,6 +7,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import AllUsersPage from './pages/AllUsersPage';
 import AllCategoriesPage from "./pages/AllCategoriesPage";
+import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 
 
 
@@ -32,7 +34,7 @@ function App() {
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/admin/users" element={<AllUsersPage />} />
                     <Route path="/allCategories" element={<AllCategoriesPage />} />
-                    <Route path="/admin/categories" element={<AllCategoriesPage />} />
+                    <Route path="/admin/categories" element={<AdminCategoriesPage />} />
                 </Routes>
             </div>
         </Router>
