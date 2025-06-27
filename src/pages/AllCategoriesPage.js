@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import {useNavigate} from "react-router-dom";
 
 const AllCategoriesPage = () => {
     const [categories, setCategories] = useState([]);
@@ -7,6 +9,8 @@ const AllCategoriesPage = () => {
     const [error, setError] = useState('');
 
     const token = localStorage.getItem('jwt');
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchCategories();
@@ -32,21 +36,23 @@ const AllCategoriesPage = () => {
 
     return (
         <div className="container mt-5">
-            <h3>Список категорій</h3>
+            <h3>Обирай категорію</h3>
             <table className="table table-bordered">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Назва</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {categories.map(category => (
-                        <tr key={category.id}>
-                            <td>{category.id}</td>
-                            <td>{category.name}</td>
-                        </tr>
-                    ))}
+                {categories.map(category => (
+                    <tr key={category.id}>
+                        <td>
+                            <Link to={`/categories/${category.id}/products`}>
+                                {category.name}
+                            </Link>
+                        </td>
+                    </tr>
+                ))}
                 </tbody>
             </table>
         </div>

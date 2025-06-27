@@ -12,6 +12,7 @@ import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AllProductsPage from './pages/AllProductsPage';
 import CreateProductPage from './pages/CreateProductPage';
 import UpdateProductPage from './pages/UpdateProductPage';
+import CategoryProductsPage from './pages/CategoryProductsPage';
 
 
 
@@ -28,6 +29,7 @@ function App() {
                     <Link className="nav-link" to="/profile">Profile</Link>
                     <Link className="nav-link" to="/allCategories">Categories</Link>
 
+
                 </div>
             </nav>
 
@@ -43,6 +45,7 @@ function App() {
                     <Route path="/admin/products" element={<AllProductsPage />} />
                     <Route path="/admin/products/create" element={<CreateProductPage />} />
                     <Route path="/admin/products/update/:id" element={<UpdateProductPage />} />
+                    <Route path="/categories/:id/products" element={<CategoryProductsPage />} />
                 </Routes>
             </div>
         </Router>
