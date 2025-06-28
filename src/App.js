@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
@@ -8,7 +7,6 @@ import AdminPage from './pages/AdminPage';
 import AllUsersPage from './pages/AllUsersPage';
 import AllCategoriesPage from "./pages/AllCategoriesPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
-// Если AllProductsPage.js лежит в src/pages/
 import AllProductsPage from './pages/AllProductsPage';
 import CreateProductPage from './pages/CreateProductPage';
 import UpdateProductPage from './pages/UpdateProductPage';
@@ -16,10 +14,16 @@ import CategoryProductsPage from './pages/CategoryProductsPage';
 import OrdersPage from './pages/OrdersPage';
 import CreateOrderPage from './pages/CreateOrderPage';
 import CartPage from './pages/CartPage';
+import OrderDetailsPage from './pages/OrderDetailsPage';
 
 
-
-
+// Додаємо просту домашню сторінку
+const HomePage = () => (
+    <div className="container mt-5">
+        <h1>Ласкаво просимо до магазину!</h1>
+        <p>Оберіть категорію або увійдіть у свій профіль.</p>
+    </div>
+);
 
 function App() {
     return (
@@ -31,13 +35,14 @@ function App() {
                     <Link className="nav-link" to="/login">Login</Link>
                     <Link className="nav-link" to="/profile">Profile</Link>
                     <Link className="nav-link" to="/allCategories">Categories</Link>
-
-
                 </div>
             </nav>
 
             <div className="container mt-4">
                 <Routes>
+                    {/* Новий маршрут для "/" */}
+                    <Route path="/" element={<HomePage />} />
+
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
@@ -52,6 +57,8 @@ function App() {
                     <Route path="/orders" element={<OrdersPage />} />
                     <Route path="/orders/create" element={<CreateOrderPage />} />
                     <Route path="/cart" element={<CartPage />} />
+                    <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+
                 </Routes>
             </div>
         </Router>

@@ -1,30 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [userId, setUserId] = useState(null);
     const token = localStorage.getItem('jwt');
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        const fetchUserAndOrders = async () => {
+            if (!token) {
+                setError('Ви не авторизовані');
+                setLoading(false);
+                return;
+            }
 
-    const fetchOrders = async () => {
-        try {
-            const response = await axios.get('http://localhost:8080/api/orders', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            setOrders(response.data);
-        } catch (e) {
-            setError('Не вдалося завантажити замовлення');
-        } finally {
-            setLoading(false);
-        }
-    };
+            try {
+                const userResponse = await axios.get('http://localhost:8080/api/user/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setUserId(userResponse.data.id);
+
+                const ordersResponse = await axios.get(`http://localhost:8080/api/orders/user/${userResponse.data.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setOrders(ordersResponse.data);
+            } catch (err) {
+                setError('Не вдалося завантажити замовлення');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserAndOrders();
+    }, [token]);
 
     if (loading) return <p>Завантаження...</p>;
     if (error) return <p className="text-danger">{error}</p>;

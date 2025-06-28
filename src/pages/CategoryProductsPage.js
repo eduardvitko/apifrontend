@@ -3,15 +3,21 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const CategoryProductsPage = () => {
-    const { id } = useParams(); // змінив categoryId на id
+    const { id } = useParams();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [addingProductId, setAddingProductId] = useState(null);
 
     const navigate = useNavigate();
     const token = localStorage.getItem('jwt');
 
     useEffect(() => {
+        if (!token) {
+            setError('Ви не авторизовані');
+            setLoading(false);
+            return;
+        }
         fetchProductsByCategory();
     }, [id]);
 
@@ -22,11 +28,35 @@ const CategoryProductsPage = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProducts(response.data);
+            setError('');
         } catch (e) {
-            setError('Не вдалося завантажити товари');
+            setError(e.response?.data?.message || 'Не вдалося завантажити товари');
         } finally {
             setLoading(false);
         }
+    };
+
+    const addToCart = (product) => {
+        setAddingProductId(product.id);
+
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const existingIndex = cart.findIndex(item => item.productId === product.id);
+
+        if (existingIndex !== -1) {
+            cart[existingIndex].quantity += 1;
+        } else {
+            cart.push({
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1
+            });
+        }
+
+        localStorage.setItem('cart', JSON.stringify(cart));
+        setAddingProductId(null);
+
+        navigate('/cart');
     };
 
     if (loading) return <p>Завантаження...</p>;
@@ -46,6 +76,7 @@ const CategoryProductsPage = () => {
                         <th>Опис</th>
                         <th>Ціна</th>
                         <th>Залишок</th>
+                        <th></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -53,8 +84,17 @@ const CategoryProductsPage = () => {
                         <tr key={product.id}>
                             <td>{product.name}</td>
                             <td>{product.description}</td>
-                            <td>{product.price}</td>
+                            <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(product.price)}</td>
                             <td>{product.stock}</td>
+                            <td>
+                                <button
+                                    className="btn btn-primary"
+                                    disabled={addingProductId === product.id}
+                                    onClick={() => addToCart(product)}
+                                >
+                                    {addingProductId === product.id ? 'Додаємо...' : 'Додати в корзину'}
+                                </button>
+                            </td>
                         </tr>
                     ))}
                     </tbody>
