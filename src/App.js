@@ -13,6 +13,9 @@ import AllProductsPage from './pages/AllProductsPage';
 import CreateProductPage from './pages/CreateProductPage';
 import UpdateProductPage from './pages/UpdateProductPage';
 import CategoryProductsPage from './pages/CategoryProductsPage';
+import OrdersPage from './pages/OrdersPage';
+import CreateOrderPage from './pages/CreateOrderPage';
+import CartPage from './pages/CartPage';
 
 
 
@@ -46,6 +49,9 @@ function App() {
                     <Route path="/admin/products/create" element={<CreateProductPage />} />
                     <Route path="/admin/products/update/:id" element={<UpdateProductPage />} />
                     <Route path="/categories/:id/products" element={<CategoryProductsPage />} />
+                    <Route path="/orders" element={<OrdersPage />} />
+                    <Route path="/orders/create" element={<CreateOrderPage />} />
+                    <Route path="/cart" element={<CartPage />} />
                 </Routes>
             </div>
         </Router>

@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 const AllProductsPage = () => {
     const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
-    const navigate = useNavigate();
     const token = localStorage.getItem('jwt');
 
     useEffect(() => {
@@ -15,56 +11,41 @@ const AllProductsPage = () => {
     }, []);
 
     const fetchProducts = async () => {
-        setLoading(true);
         try {
-            const response = await axios.get('http://localhost:8080/api/admin/all/products', {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await axios.get('http://localhost:8080/api/products/all', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             });
             setProducts(response.data);
-        } catch {
-            setError('Помилка завантаження товарів');
-        } finally {
-            setLoading(false);
+        } catch (e) {
+            setError('Не вдалося завантажити товари');
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!id) return;
-        try {
-            await axios.delete(`http://localhost:8080/api/admin/delete/product/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
+    const addToCart = (product) => {
+        const currentCart = JSON.parse(localStorage.getItem('cart')) || [];
+        const existing = currentCart.find(p => p.productId === product.id);
+
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            currentCart.push({
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1
             });
-            setProducts(prev => prev.filter(product => product.id !== id));
-        } catch {
-            alert('Не вдалося видалити товар');
         }
-    };
 
-    const handleUpdate = (product) => {
-        // твоя логика обновления
+        localStorage.setItem('cart', JSON.stringify(currentCart));
+        alert('Товар додано до корзини');
     };
-
-    if (loading) return <p>Завантаження...</p>;
-    if (error) return <p className="text-danger">{error}</p>;
 
     return (
         <div className="container mt-5">
-            <button
-                className="btn btn-outline-secondary mb-3"
-                onClick={() => navigate('/admin')}
-            >
-                Назад
-            </button>
-
-            {/* Кнопка Создать товар */}
-            <button
-                className="btn btn-success mb-3 ms-3"
-                onClick={() => navigate('/admin/products/create')}
-            >
-                Створити товар
-            </button>
-
-            <h3>Список товарів</h3>
+            <h3>Усі товари</h3>
+            {error && <p className="text-danger">{error}</p>}
             <table className="table table-bordered">
                 <thead>
                 <tr>
@@ -72,8 +53,7 @@ const AllProductsPage = () => {
                     <th>Опис</th>
                     <th>Ціна</th>
                     <th>Залишок</th>
-                    <th>Категорія</th>
-                    <th>Дії</th>
+                    <th>Дія</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -83,19 +63,10 @@ const AllProductsPage = () => {
                         <td>{product.description}</td>
                         <td>{product.price}</td>
                         <td>{product.stock}</td>
-                        <td>{product.categoryName || '-'}</td>
                         <td>
-                            <button
-                                className="btn btn-sm btn-warning me-2"
-                                onClick={() => navigate(`/admin/products/update/${product.id}`)}
-                            >
-                                Редагувати
-                            </button>
-                            <button
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleDelete(product.id)}
-                            >
-                                Видалити
+                            <button className="btn btn-primary btn-sm"
+                                    onClick={() => addToCart(product)}>
+                                Додати до корзини
                             </button>
                         </td>
                     </tr>

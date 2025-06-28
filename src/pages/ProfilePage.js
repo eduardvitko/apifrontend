@@ -60,6 +60,16 @@ const ProfilePage = () => {
                 </li>
 
             </ul>
+            <button
+                className="btn btn-outline-danger mt-4"
+                onClick={() => {
+                    localStorage.removeItem('jwt');
+                    window.location.reload();
+                }}
+            >
+                Logout
+            </button>
+
         </div>
     );
 };
