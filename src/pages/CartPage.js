@@ -75,6 +75,9 @@ const CartPage = () => {
 
     return (
         <div className="container mt-5">
+         <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
+                                                        Назад
+                                                    </button>
             <h3>🛒 Корзина</h3>
             {message && <p className="text-success">{message}</p>}
             {cart.length === 0 ? (
@@ -110,7 +113,9 @@ const CartPage = () => {
                     <button className="btn btn-success" onClick={handleOrder} disabled={loading}>
                         {loading ? 'Оформлення...' : 'Оформити замовлення'}
                     </button>
+
                 </div>
+
             )}
         </div>
     );

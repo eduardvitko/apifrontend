@@ -40,7 +40,11 @@ const OrdersPage = () => {
     if (error) return <p className="text-danger">{error}</p>;
 
     return (
+
         <div className="container mt-5">
+         <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
+                                                        Назад
+                                                    </button>
             <h3>Мої замовлення</h3>
             {orders.length === 0 ? (
                 <p>У вас немає замовлень.</p>
@@ -71,7 +75,9 @@ const OrdersPage = () => {
                             </table>
                             <p><strong>Загальна сума: {order.total} ₴</strong></p>
                         </div>
+
                     </div>
+
                 ))
             )}
         </div>
