@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const ProfilePage = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -60,16 +63,24 @@ const ProfilePage = () => {
                 </li>
 
             </ul>
-            <button
-                className="btn btn-outline-danger mt-4"
-                onClick={() => {
-                    localStorage.removeItem('jwt');
-                    window.location.reload();
-                }}
-            >
-                Logout
-            </button>
+            <div className="mt-4 d-flex gap-3">
+                <button
+                    className="btn btn-primary"
+                    onClick={() => navigate('/orders')}
+                >
+                    Мої замовлення
+                </button>
 
+                <button
+                    className="btn btn-outline-danger"
+                    onClick={() => {
+                        localStorage.removeItem('jwt');
+                        navigate('/login');
+                    }}
+                >
+                    Вийти
+                </button>
+            </div>
         </div>
     );
 };
