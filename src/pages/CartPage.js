@@ -32,10 +32,22 @@ const CartPage = () => {
         setCart(storedCart);
     }, [token]);
 
-    const removeFromCart = (productId) => {
-        const updatedCart = cart.filter(item => item.productId !== productId);
+    const updateCart = (updatedCart) => {
         setCart(updatedCart);
         localStorage.setItem('cart', JSON.stringify(updatedCart));
+    };
+
+    const handleQuantityChange = (productId, newQuantity) => {
+        if (newQuantity < 1) return; // мінімальна кількість 1
+        const updatedCart = cart.map(item =>
+            item.productId === productId ? { ...item, quantity: newQuantity } : item
+        );
+        updateCart(updatedCart);
+    };
+
+    const removeFromCart = (productId) => {
+        const updatedCart = cart.filter(item => item.productId !== productId);
+        updateCart(updatedCart);
     };
 
     const handleOrder = async () => {
@@ -75,9 +87,9 @@ const CartPage = () => {
 
     return (
         <div className="container mt-5">
-         <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
-                                                        Назад
-                                                    </button>
+            <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
+                Назад
+            </button>
             <h3>🛒 Корзина</h3>
             {message && <p className="text-success">{message}</p>}
             {cart.length === 0 ? (
@@ -97,7 +109,15 @@ const CartPage = () => {
                         {cart.map(item => (
                             <tr key={item.productId}>
                                 <td>{item.name}</td>
-                                <td>{item.quantity}</td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity}
+                                        onChange={e => handleQuantityChange(item.productId, Number(e.target.value))}
+                                        style={{ width: '60px' }}
+                                    />
+                                </td>
                                 <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(item.price)}</td>
                                 <td>
                                     <button className="btn btn-danger btn-sm"
@@ -113,9 +133,7 @@ const CartPage = () => {
                     <button className="btn btn-success" onClick={handleOrder} disabled={loading}>
                         {loading ? 'Оформлення...' : 'Оформити замовлення'}
                     </button>
-
                 </div>
-
             )}
         </div>
     );
