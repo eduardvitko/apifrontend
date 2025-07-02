@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api/images'; // Adjust if your backend runs on a different port/host
+const API_BASE_URL = 'http://localhost:8080/api/images';
 
 const ImagePage = () => {
     const [images, setImages] = useState([]);
-    const [products, setProducts] = useState([]); // To display available products for linking images
-    const [selectedImage, setSelectedImage] = useState(null); // For editing
+    const [products, setProducts] = useState([]);
+    const [selectedImage, setSelectedImage] = useState(null);
     const [formData, setFormData] = useState({
         url: '',
         altText: '',
-        productId: ''
+        productId: '' // Зберігаємо як рядок для <select>, перетворюємо при відправці
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Dummy ADMIN token for demonstration.
-    // In a real app, this would come from your authentication context/state.
-    const ADMIN_TOKEN = 'YOUR_ADMIN_JWT_TOKEN_HERE'; // *** IMPORTANT: Replace with a real token for ADMIN operations ***
+    const ADMIN_TOKEN = 'YOUR_ADMIN_JWT_TOKEN_HERE';
 
     const authHeaders = {
         headers: {
@@ -27,15 +25,13 @@ const ImagePage = () => {
 
     useEffect(() => {
         fetchImages();
-        fetchProducts(); // Assuming you have a Product API to get product IDs
+        fetchProducts();
     }, []);
 
     const fetchImages = async () => {
         setLoading(true);
         setError('');
         try {
-            // For fetching all images, your controller endpoint /api/images/all has no @PreAuthorize
-            // so it might be accessible to anyone. If you add security later, you'd need headers.
             const response = await axios.get(`${API_BASE_URL}/all`);
             setImages(response.data);
         } catch (err) {
@@ -47,17 +43,13 @@ const ImagePage = () => {
     };
 
     const fetchProducts = async () => {
-        // Assuming you have a product endpoint like /api/products/all or similar
-        // Adjust this URL and headers as needed for your Product API
         try {
-            const response = await axios.get('http://localhost:8080/api/products/all', authHeaders); // Assuming product fetching might need auth
+            const response = await axios.get('http://localhost:8080/api/products/all', authHeaders);
             setProducts(response.data);
         } catch (err) {
             console.error('Error fetching products:', err);
-            // setError('Error fetching products: ' + (err.response?.data || err.message));
         }
     };
-
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -70,11 +62,11 @@ const ImagePage = () => {
         try {
             const dataToSend = {
                 ...formData,
-                productId: parseInt(formData.productId, 10) // Ensure productId is an integer
+                productId: formData.productId ? parseInt(formData.productId, 10) : null // Перетворюємо на число або null
             };
             const response = await axios.post(API_BASE_URL, dataToSend, authHeaders);
             setImages([...images, response.data]);
-            setFormData({ url: '', altText: '', productId: '' }); // Clear form
+            setFormData({ url: '', altText: '', productId: '' });
             alert('Image created successfully!');
         } catch (err) {
             setError('Error creating image: ' + (err.response?.data || err.message));
@@ -87,7 +79,7 @@ const ImagePage = () => {
         setFormData({
             url: image.url,
             altText: image.altText,
-            productId: image.productId
+            productId: image.productId ? String(image.productId) : '' // Перетворюємо число productId на рядок для <select>
         });
     };
 
@@ -99,13 +91,13 @@ const ImagePage = () => {
         try {
             const dataToSend = {
                 ...formData,
-                id: selectedImage.id, // Include ID for DTO if backend expects it (though path variable is used)
-                productId: parseInt(formData.productId, 10)
+                id: selectedImage.id,
+                productId: formData.productId ? parseInt(formData.productId, 10) : null
             };
             const response = await axios.put(`${API_BASE_URL}/update/${selectedImage.id}`, dataToSend, authHeaders);
             setImages(images.map(img => img.id === selectedImage.id ? response.data : img));
-            setSelectedImage(null); // Exit edit mode
-            setFormData({ url: '', altText: '', productId: '' }); // Clear form
+            setSelectedImage(null);
+            setFormData({ url: '', altText: '', productId: '' });
             alert('Image updated successfully!');
         } catch (err) {
             setError('Error updating image: ' + (err.response?.data || err.message));
@@ -165,14 +157,14 @@ const ImagePage = () => {
                         <select
                             id="productId"
                             name="productId"
-                            value={formData.productId}
+                            value={formData.productId} // value тут буде рядком
                             onChange={handleInputChange}
                             required
                             style={styles.select}
                         >
                             <option value="">Select a Product</option>
                             {products.map(product => (
-                                <option key={product.id} value={product.id}>
+                                <option key={product.id} value={String(product.id)}> {/* Завжди перетворюємо на рядок */}
                                     {product.name} (ID: {product.id})
                                 </option>
                             ))}
