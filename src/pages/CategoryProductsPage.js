@@ -26,6 +26,7 @@ const CategoryProductsPage = () => {
         try {
             const response = await axios.get(`http://localhost:8080/api/products/by-category/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
+
             });
             setProducts(response.data);
             setError('');
@@ -72,6 +73,7 @@ const CategoryProductsPage = () => {
                 <table className="table table-bordered">
                     <thead>
                     <tr>
+                        <th>Зображення</th>
                         <th>Назва</th>
                         <th>Опис</th>
                         <th>Ціна</th>
@@ -82,6 +84,17 @@ const CategoryProductsPage = () => {
                     <tbody>
                     {products.map(product => (
                         <tr key={product.id}>
+                            <td style={{ width: 100 }}>
+                                {product.images && product.images.length > 0 ? (
+                                    <img
+                                        src={product.images[0].url}
+                                        alt={product.images[0].altText || product.name}
+                                        style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 5 }}
+                                    />
+                                ) : (
+                                    <span>Немає зображення</span>
+                                )}
+                            </td>
                             <td>{product.name}</td>
                             <td>{product.description}</td>
                             <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(product.price)}</td>

@@ -8,6 +8,7 @@ import AllUsersPage from './pages/AllUsersPage';
 import AllCategoriesPage from "./pages/AllCategoriesPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AllProductsPage from './pages/AllProductsPage';
+
 import CreateProductPage from './pages/CreateProductPage';
 import UpdateProductPage from './pages/UpdateProductPage';
 import CategoryProductsPage from './pages/CategoryProductsPage';
@@ -15,6 +16,9 @@ import OrdersPage from './pages/OrdersPage';
 import CreateOrderPage from './pages/CreateOrderPage';
 import CartPage from './pages/CartPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+
+import ImagePage from './pages/ImagePage';
+
 
 
 // Додаємо просту домашню сторінку
@@ -58,6 +62,10 @@ function App() {
                     <Route path="/orders/create" element={<CreateOrderPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+                    <Route path="/admin/images" element={<ImagePage />} />
+                    <Route path="/products/all" element={<AllProductsPage />} />
+                   // <Route path="/admin/images/:productId" element={<ImagePage />} />
+
 
                 </Routes>
             </div>

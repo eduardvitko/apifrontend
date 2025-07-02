@@ -16,6 +16,10 @@ const AdminPage = () => {
     const goToAllProducts = () => {
         navigate('/admin/products'); // <-- цей маршрут має вести на AllProductsPage
     };
+    const goToImages = () => {
+        navigate('/admin/images');
+    };
+
 
     return (
         <div className="container mt-5">
@@ -39,6 +43,10 @@ const AdminPage = () => {
                     <button onClick={goToAllProducts} className="btn btn-success">
                         Всі товари
                     </button>
+                    <button onClick={goToImages} className="btn btn-warning mt-2">
+                        Зображення
+                    </button>
+
                 </div>
             </div>
         </div>
