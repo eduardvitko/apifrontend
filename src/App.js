@@ -16,6 +16,7 @@ import OrdersPage from './pages/OrdersPage';
 import CreateOrderPage from './pages/CreateOrderPage';
 import CartPage from './pages/CartPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+import PaymentPage from './pages/PaymentPage';
 
 
 import ImagePage from './pages/ImagePage';
@@ -68,6 +69,9 @@ function App() {
                     <Route path="/admin/images" element={<ImagePage />} />
                     <Route path="/products/all" element={<AllProductsPage />} />
                    // <Route path="/admin/images/:productId" element={<ImagePage />} />
+                    <Route path="/payments" element={<PaymentPage />
+                        }
+                    />
 
 
                 </Routes>
