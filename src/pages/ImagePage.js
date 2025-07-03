@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:8080/api/images';
 
@@ -14,6 +15,7 @@ const ImagePage = () => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     const ADMIN_TOKEN = 'YOUR_ADMIN_JWT_TOKEN_HERE';
 
@@ -125,7 +127,20 @@ const ImagePage = () => {
     return (
         <div style={styles.container}>
             <h1>Image Management</h1>
-
+            <button
+                onClick={() => navigate(-1)}
+                style={{
+                    marginBottom: '20px',
+                    padding: '8px 15px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                }}
+            >
+                ← Назад
+            </button>
             <div style={styles.formSection}>
                 <h2>{selectedImage ? 'Edit Image' : 'Create New Image'}</h2>
                 <form onSubmit={selectedImage ? handleUpdateImage : handleCreateImage} style={styles.form}>

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const token = localStorage.getItem('jwt');
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -46,7 +48,6 @@ const OrdersPage = () => {
 
             alert('Замовлення скасовано');
 
-            // Оновлюємо статус в локальному state
             const updatedOrders = orders.map(order =>
                 order.id === orderId ? { ...order, status: 'CANCELLED' } : order
             );
@@ -57,12 +58,31 @@ const OrdersPage = () => {
         }
     };
 
+    const handleDeleteOrder = async (orderId) => {
+        const confirmed = window.confirm('Ви дійсно хочете видалити це замовлення? Цю дію не можна буде скасувати.');
+        if (!confirmed) return;
+
+        try {
+            await await axios.delete(`http://localhost:8080/api/orders/delete/${orderId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            alert('Замовлення видалено');
+
+            const updatedOrders = orders.filter(order => order.id !== orderId);
+            setOrders(updatedOrders);
+        } catch (error) {
+            console.error(error);
+            alert(error.response?.data?.message || 'Помилка при видаленні замовлення');
+        }
+    };
+
     if (loading) return <p>Завантаження...</p>;
     if (error) return <p className="text-danger">{error}</p>;
 
     return (
         <div className="container mt-5">
-            <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
+            <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
                 Назад
             </button>
 
@@ -108,6 +128,15 @@ const OrdersPage = () => {
                                     onClick={() => handleCancelOrder(order.id)}
                                 >
                                     Скасувати замовлення
+                                </button>
+                            )}
+
+                            {order.status === 'CANCELLED' && (
+                                <button
+                                    className="btn btn-outline-danger mt-2"
+                                    onClick={() => handleDeleteOrder(order.id)}
+                                >
+                                    Видалити замовлення
                                 </button>
                             )}
                         </div>

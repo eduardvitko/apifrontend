@@ -84,6 +84,9 @@ const AllProductsPage = () => {
 
     return (
         <div className="container mt-5">
+            <button className="btn btn-secondary mb-3" onClick={() => navigate('/admin')}>
+                ← Назад до панелі адміністратора
+            </button>
             <h2>Керування товарами</h2>
             <button className="btn btn-success mb-3" onClick={handleCreate}>
                 Створити товар
@@ -137,9 +140,7 @@ const AllProductsPage = () => {
                                     <button className="btn btn-primary btn-sm me-2" onClick={() => handleEdit(prod.id)}>
                                         Редагувати
                                     </button>
-                                    <button className="btn btn-warning btn-sm me-2" onClick={() => handleManageImages(prod.id)}>
-                                        Зображення
-                                    </button>
+
                                     <button className="btn btn-danger btn-sm" onClick={() => handleDelete(prod.id)}>
                                         Видалити
                                     </button>
@@ -148,9 +149,7 @@ const AllProductsPage = () => {
                         ))}
                         </tbody>
                     </table>
-                    <button className="btn btn-secondary mb-3" onClick={() => navigate('/admin')}>
-                        ← Назад до панелі адміністратора
-                    </button>
+
                 </>
             )}
         </div>

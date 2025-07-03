@@ -1,9 +1,15 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPage = () => {
     const navigate = useNavigate();
-    console.log("AdminPage rendered");
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/admin/login');
+        }
+    }, [navigate]);
 
     const goToAllUsers = () => {
         navigate('/admin/users');
@@ -14,12 +20,12 @@ const AdminPage = () => {
     };
 
     const goToAllProducts = () => {
-        navigate('/admin/products'); // <-- цей маршрут має вести на AllProductsPage
+        navigate('/admin/products');
     };
+
     const goToImages = () => {
         navigate('/admin/images');
     };
-
 
     return (
         <div className="container mt-5">
@@ -40,13 +46,14 @@ const AdminPage = () => {
                     </button>
                     <br />
 
-                    <button onClick={goToAllProducts} className="btn btn-success">
+                    <button onClick={goToAllProducts} className="btn btn-success mb-2">
                         Всі товари
                     </button>
+                    <br/>
+
                     <button onClick={goToImages} className="btn btn-warning mt-2">
                         Зображення
                     </button>
-
                 </div>
             </div>
         </div>

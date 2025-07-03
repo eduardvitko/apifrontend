@@ -8,7 +8,7 @@ import AllUsersPage from './pages/AllUsersPage';
 import AllCategoriesPage from "./pages/AllCategoriesPage";
 import AdminCategoriesPage from "./pages/AdminCategoriesPage";
 import AllProductsPage from './pages/AllProductsPage';
-
+import AdminLoginPage from './pages/AdminLoginPage';
 import CreateProductPage from './pages/CreateProductPage';
 import UpdateProductPage from './pages/UpdateProductPage';
 import CategoryProductsPage from './pages/CategoryProductsPage';
@@ -16,6 +16,7 @@ import OrdersPage from './pages/OrdersPage';
 import CreateOrderPage from './pages/CreateOrderPage';
 import CartPage from './pages/CartPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+
 
 import ImagePage from './pages/ImagePage';
 
@@ -39,6 +40,7 @@ function App() {
                     <Link className="nav-link" to="/login">Login</Link>
                     <Link className="nav-link" to="/profile">Profile</Link>
                     <Link className="nav-link" to="/allCategories">Categories</Link>
+
                 </div>
             </nav>
 
@@ -51,6 +53,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/admin" element={<AdminPage />} />
+                    <Route path="/admin/login" element={<AdminLoginPage />} />
                     <Route path="/admin/users" element={<AllUsersPage />} />
                     <Route path="/allCategories" element={<AllCategoriesPage />} />
                     <Route path="/admin/categories" element={<AdminCategoriesPage />} />

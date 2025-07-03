@@ -8,7 +8,6 @@ const ProfilePage = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-
     useEffect(() => {
         const fetchProfile = async () => {
             const token = localStorage.getItem('jwt');
@@ -50,6 +49,9 @@ const ProfilePage = () => {
         return <div className="alert alert-danger mt-4 text-center">{error}</div>;
     }
 
+    // Перевірка, чи є у користувача роль ADMIN
+    const isAdmin = profile.roles?.includes('ADMIN');
+
     return (
         <div className="container mt-5" style={{ maxWidth: '600px' }}>
             <h3 className="mb-4">Welcome, {profile.username}</h3>
@@ -61,15 +63,23 @@ const ProfilePage = () => {
                         <span key={role} className="badge bg-secondary ms-2">{role}</span>
                     ))}
                 </li>
-
             </ul>
-            <div className="mt-4 d-flex gap-3">
+            <div className="mt-4 d-flex gap-3 flex-wrap">
                 <button
                     className="btn btn-primary"
                     onClick={() => navigate('/orders')}
                 >
                     Мої замовлення
                 </button>
+
+                {isAdmin && (
+                    <button
+                        className="btn btn-warning"
+                        onClick={() => navigate('/admin')}
+                    >
+                        Адмін панель
+                    </button>
+                )}
 
                 <button
                     className="btn btn-outline-danger"
