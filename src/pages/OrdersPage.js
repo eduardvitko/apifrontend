@@ -1,173 +1,247 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Card, Button, Table, Alert, Spinner } from 'react-bootstrap';
+
+// Рекомендовано централізувати URL-адреси
+// Приклад: src/config.js
+export const API_ENDPOINTS = {
+    BASE_URL: 'http://localhost:8080/api',
+    PAYMENTS: 'http://localhost:8080/api/payments',
+    ORDERS: 'http://localhost:8080/api/orders',
+    USER_ME: 'http://localhost:8080/api/user/me',
+};
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const token = localStorage.getItem('jwt');
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            if (!token) {
-                setError('Ви не авторизовані');
-                setLoading(false);
-                return;
-            }
+    const getToken = () => localStorage.getItem('jwt');
 
-            try {
-                const userResponse = await axios.get('http://localhost:8080/api/user/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+    const getAuthHeaders = () => ({
+        headers: {
+            Authorization: `Bearer ${getToken()}`
+        }
+    });
 
-                // Припускаємо, що API повертає замовлення з полем userId,
-                // або що /api/orders/user/{id} вже фільтрує замовлення для цього користувача.
-                const ordersResponse = await axios.get(`http://localhost:8080/api/orders/user/${userResponse.data.id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+    // Функція для отримання замовлень (всіх замовлень поточного користувача)
+    const fetchOrders = async () => {
+        setLoading(true);
+        setError('');
+        setMessage('');
+        const token = getToken();
 
-                setOrders(ordersResponse.data);
-            } catch (err) {
-                console.error("Помилка завантаження замовлень:", err);
-                setError('Не вдалося завантажити замовлення. Будь ласка, спробуйте пізніше.');
-                // Якщо помилка 401/403, можливо, токен недійсний, перенаправляємо на логін
-                if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-                    localStorage.removeItem('jwt');
-                    navigate('/login');
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchOrders();
-    }, [token, navigate]); // Додано navigate до залежностей useEffect
-
-    const handleCancelOrder = async (orderId) => {
-        // Замість window.confirm використовуємо більш дружній UI (але для прикладу залишаємо)
-        const confirmed = window.confirm('Ви дійсно хочете скасувати це замовлення?');
-        if (!confirmed) return;
+        if (!token) {
+            setError('Будь ласка, увійдіть, щоб переглянути замовлення. Токен JWT відсутній.');
+            setLoading(false);
+            return;
+        }
 
         try {
-            await axios.put(`http://localhost:8080/api/orders/${orderId}/cancel`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const userResponse = await axios.get(API_ENDPOINTS.USER_ME, getAuthHeaders());
+            const userId = userResponse.data.id;
 
-            alert('Замовлення скасовано'); // Замінити на UI-повідомлення
+            const ordersResponse = await axios.get(`${API_ENDPOINTS.ORDERS}/user/${userId}`, getAuthHeaders());
+            setOrders(ordersResponse.data); // Зберігаємо усі замовлення користувача
 
-            const updatedOrders = orders.map(order =>
-                order.id === orderId ? { ...order, status: 'CANCELLED' } : order
+        } catch (err) {
+            console.error("Помилка завантаження замовлень:", err);
+            if (err.response) {
+                if (err.response.status === 401 || err.response.status === 403) {
+                    setError('Сесія закінчилася або ви неавторизовані. Будь ласка, увійдіть знову.');
+                    localStorage.removeItem('jwt');
+                    navigate('/login');
+                } else {
+                    setError(`Помилка: ${err.response.status} - ${err.response.data.message || err.response.statusText}`);
+                }
+            } else {
+                setError('Помилка мережі або сервера. Будь ласка, спробуйте пізніше.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchOrders(); // Завантажуємо замовлення при першому рендері сторінки
+    }, [navigate]);
+
+    const handleCancelOrder = async (orderId) => {
+        if (!window.confirm('Ви дійсно хочете скасувати це замовлення?')) {
+            return;
+        }
+
+        setError('');
+        setMessage('');
+
+        try {
+            await axios.put(`${API_ENDPOINTS.ORDERS}/${orderId}/cancel`, {}, getAuthHeaders());
+            setMessage('Замовлення успішно скасовано! ❌');
+
+            // Оновлюємо статус в локальному стані, щоб зміни відобразилися миттєво
+            setOrders(prevOrders =>
+                prevOrders.map(order =>
+                    order.id === orderId ? { ...order, status: 'CANCELLED' } : order
+                )
             );
-            setOrders(updatedOrders);
-        } catch (error) {
-            console.error(error);
-            alert(error.response?.data?.message || 'Помилка при скасуванні замовлення'); // Замінити на UI-повідомлення
+        } catch (err) {
+            console.error('Помилка скасування замовлення:', err);
+            setError(err.response?.data?.message || 'Помилка при скасуванні замовлення.');
         }
     };
 
     const handleDeleteOrder = async (orderId) => {
-        // Замість window.confirm використовуємо більш дружній UI (але для прикладу залишаємо)
-        const confirmed = window.confirm('Ви дійсно хочете видалити це замовлення? Цю дію не можна буде скасувати.');
-        if (!confirmed) return;
+        if (!window.confirm('Ви дійсно хочете видалити це замовлення? Цю дію не можна буде скасувати.')) {
+            return;
+        }
+
+        setError('');
+        setMessage('');
 
         try {
-            await axios.delete(`http://localhost:8080/api/orders/delete/${orderId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axios.delete(`${API_ENDPOINTS.ORDERS}/delete/${orderId}`, getAuthHeaders());
+            setMessage('Замовлення успішно видалено! 🗑️');
 
-            alert('Замовлення видалено'); // Замінити на UI-повідомлення
-
-            const updatedOrders = orders.filter(order => order.id !== orderId);
-            setOrders(updatedOrders);
-        } catch (error) {
-            console.error(error);
-            alert(error.response?.data?.message || 'Помилка при видаленні замовлення'); // Замінити на UI-повідомлення
+            // Видаляємо замовлення зі списку
+            setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+        } catch (err) {
+            console.error('Помилка видалення замовлення:', err);
+            setError(err.response?.data?.message || 'Помилка при видаленні замовлення.');
         }
     };
 
-    // Нова функція для обробки натискання кнопки "Сплатити"
     const handlePayOrder = (orderId, orderTotal) => {
         // Перенаправляємо на сторінку платежів, передаючи дані замовлення через state
         navigate('/payments', { state: { orderId, amount: orderTotal } });
     };
 
-    if (loading) return <p className="text-center mt-5">Завантаження...</p>;
-    if (error) return <p className="text-danger text-center mt-5">{error}</p>;
+    if (loading) {
+        return (
+            <Container className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+                <div className="text-center">
+                    <Spinner animation="border" role="status" className="mb-3" />
+                    <p className="text-muted">Завантаження замовлень...</p>
+                </div>
+            </Container>
+        );
+    }
 
     return (
-        <div className="container mt-5">
-            <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
-                Назад
-            </button>
+        <Container fluid className="py-5 bg-light">
+            <Container className="bg-white p-5 rounded-3 shadow border">
+                <h1 className="text-center mb-5 text-primary fw-bold">
+                    Мої Замовлення
+                </h1>
 
-            <h3 className="mt-4">Мої замовлення</h3>
+                <Button variant="secondary" onClick={() => navigate(-1)} className="mb-4">
+                    &#8592; Назад
+                </Button>
 
-            {orders.length === 0 ? (
-                <p className="text-center">У вас немає замовлень.</p>
-            ) : (
-                orders.map(order => (
-                    <div key={order.id} className="card mb-4">
-                        <div className="card-header">
-                            <strong>Замовлення #{order.id}</strong> — Статус: <span className={
-                            order.status === 'CANCELLED' ? 'text-danger' :
-                                order.status === 'COMPLETED' ? 'text-success' : 'text-warning'
-                        }>
-                                {order.status}
-                            </span> — Дата: {new Date(order.orderDate).toLocaleString()}
-                        </div>
-                        <div className="card-body">
-                            <table className="table">
-                                <thead>
-                                <tr>
-                                    <th>Назва товару</th>
-                                    <th>Кількість</th>
-                                    <th>Ціна</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {order.items && order.items.map(item => ( // Додано перевірку order.items
-                                    <tr key={item.id}>
-                                        <td>{item.productName}</td>
-                                        <td>{item.quantity}</td>
-                                        <td>{item.price} ₴</td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                            <p><strong>Загальна сума: {order.total ? order.total.toFixed(2) : '0.00'} ₴</strong></p>
+                {error && (
+                    <Alert variant="danger" className="mb-4">
+                        <strong>Помилка!</strong> {error}
+                    </Alert>
+                )}
+                {message && (
+                    <Alert variant="success" className="mb-4">
+                        <strong>Успіх!</strong> {message}
+                    </Alert>
+                )}
 
-                            {order.status === 'PENDING' && (
-                                <div className="d-flex gap-2 mt-2">
-                                    <button
-                                        className="btn btn-success" // Кнопка "Сплатити"
-                                        onClick={() => handlePayOrder(order.id, order.total)}
-                                    >
-                                        Сплатити
-                                    </button>
-                                    <button
-                                        className="btn btn-danger"
-                                        onClick={() => handleCancelOrder(order.id)}
-                                    >
-                                        Скасувати замовлення
-                                    </button>
-                                </div>
-                            )}
+                {orders.length === 0 ? (
+                    <p className="text-center text-muted fs-5">
+                        У вас поки що немає замовлень. 😔 Можливо, час щось замовити?
+                    </p>
+                ) : (
+                    <Row xs={1} lg={2} className="g-4">
+                        {orders.map(order => (
+                            <Col key={order.id}>
+                                <Card className="h-100 shadow-sm border-secondary transform-hover">
+                                    <Card.Header className="bg-light text-dark fw-bold d-flex justify-content-between align-items-center">
+                                        Замовлення #{order.id}
+                                        <span className={`badge ${
+                                            order.status === 'CANCELLED' ? 'bg-danger' :
+                                                order.status === 'PAID' || order.status === 'COMPLETED' ? 'bg-success' : // Відображаємо PAID та COMPLETED як успішні
+                                                    'bg-warning text-dark'
+                                        }`}>
+                                            {order.status}
+                                        </span>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <Card.Text className="text-muted mb-2">
+                                            Дата замовлення: {new Date(order.orderDate).toLocaleString()}
+                                        </Card.Text>
+                                        <h5 className="mb-3 text-dark">Деталі замовлення:</h5>
+                                        <Table striped bordered hover size="sm">
+                                            <thead>
+                                            <tr>
+                                                <th>Товар</th>
+                                                <th>Кіл-ть</th>
+                                                <th>Ціна</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {order.items && order.items.map(item => (
+                                                <tr key={item.id}>
+                                                    <td>{item.productName}</td>
+                                                    <td>{item.quantity}</td>
+                                                    <td>{item.price.toFixed(2)} ₴</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </Table>
+                                        <h4 className="text-end text-primary mt-3">
+                                            Загальна сума: <span className="fw-bold">{order.total ? order.total.toFixed(2) : '0.00'} ₴</span>
+                                        </h4>
 
-                            {order.status === 'CANCELLED' && (
-                                <button
-                                    className="btn btn-outline-danger mt-2"
-                                    onClick={() => handleDeleteOrder(order.id)}
-                                >
-                                    Видалити замовлення
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                ))
-            )}
-        </div>
+                                        <div className="d-flex flex-column flex-md-row justify-content-end gap-2 mt-3">
+                                            {order.status === 'PENDING' && (
+                                                <>
+                                                    <Button
+                                                        variant="success"
+                                                        onClick={() => handlePayOrder(order.id, order.total)}
+                                                        className="flex-grow-1 flex-md-grow-0"
+                                                    >
+                                                        Сплатити
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        onClick={() => handleCancelOrder(order.id)}
+                                                        className="flex-grow-1 flex-md-grow-0"
+                                                    >
+                                                        Скасувати
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {/* Кнопка "Сплачено" тепер відображається для PAID та COMPLETED */}
+                                            {(order.status === 'PAID' || order.status === 'COMPLETED') && (
+                                                <Button variant="success" disabled className="flex-grow-1 flex-md-grow-0">
+                                                    <i className="bi bi-check-circle me-2"></i> Сплачено
+                                                </Button>
+                                            )}
+
+                                            {order.status === 'CANCELLED' && (
+                                                <Button
+                                                    variant="outline-secondary"
+                                                    onClick={() => handleDeleteOrder(order.id)}
+                                                    className="flex-grow-1 flex-md-grow-0"
+                                                >
+                                                    Видалити замовлення
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        ))}
+                    </Row>
+                )}
+            </Container>
+        </Container>
     );
 };
 
