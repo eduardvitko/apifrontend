@@ -1,20 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { useLocation,useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
 // Рекомендовано централізувати URL-адреси
 // Приклад: src/config.js
 export const API_ENDPOINTS = {
     BASE_URL: 'http://localhost:8080/api',
-    PAYMENTS: 'http://localhost:8080/api/payments',
+    PAYMENTS: 'http://localhost:8080/api/payments', // Припускаємо, що це може повертати ВСІ платежі
     ORDERS: 'http://localhost:8080/api/orders',
     USER_ME: 'http://localhost:8080/api/user/me',
 };
 
 const PaymentPage = () => {
-    const [payments, setPayments] = useState([]);
-    const [orders, setOrders] = useState([]); // Тут будуть тільки замовлення поточного користувача
+    // [payments, setPayments] тепер буде містити ВСІ платежі, якщо ваш бекенд їх так повертає
+    const [allPayments, setAllPayments] = useState([]);
+    const [userOrders, setUserOrders] = useState([]); // Тут будуть тільки замовлення поточного користувача
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [formData, setFormData] = useState({
         orderId: '',
@@ -28,8 +29,7 @@ const PaymentPage = () => {
 
     const formRef = useRef(null);
     const location = useLocation();
-    const navigate = useNavigate(); // Ініціалізуємо useNavigate
-
+    const navigate = useNavigate();
 
     const getToken = () => localStorage.getItem('jwt');
 
@@ -58,20 +58,13 @@ const PaymentPage = () => {
             const userRes = await axios.get(API_ENDPOINTS.USER_ME, getAuthHeaders());
             const userId = userRes.data.id;
 
-            // Завантажуємо платежі
-            // В ідеалі, ваш API платежів також мав би підтримувати фільтрацію за userId
-            // Якщо ні, то тут будуть всі платежі, що може бути небажано з точки зору конфіденційності
+            // Завантажуємо ВСІ платежі (якщо ваш API їх так повертає)
             const paymentsRes = await axios.get(API_ENDPOINTS.PAYMENTS, getAuthHeaders());
-            // Фільтруємо платежі, якщо payment API не повертає їх за userId автоматично
-            // Припускаємо, що payment об'єкт має orderId, і orderId може бути пов'язаний з userId
-            // Це може вимагати додаткової логіки, якщо payment не містить userId напряму.
-            // Для простоти, поки що залишаємо всі платежі, але майте на увазі цей момент.
-            setPayments(paymentsRes.data);
-
+            setAllPayments(paymentsRes.data); // Зберігаємо всі завантажені платежі
 
             // Завантажуємо замовлення ЛИШЕ ПОТОЧНОГО КОРИСТУВАЧА
             const ordersRes = await axios.get(`${API_ENDPOINTS.ORDERS}/user/${userId}`, getAuthHeaders());
-            setOrders(ordersRes.data); // Тепер у стані 'orders' лише замовлення поточного користувача
+            setUserOrders(ordersRes.data); // Тепер у стані 'userOrders' лише замовлення поточного користувача
 
         } catch (err) {
             console.error('Помилка завантаження даних:', err);
@@ -90,7 +83,7 @@ const PaymentPage = () => {
     };
 
     useEffect(() => {
-        loadAllData(); // Завантажуємо дані при першому рендері
+        loadAllData();
 
         if (location.state && location.state.orderId) {
             const { orderId, amount } = location.state;
@@ -98,14 +91,14 @@ const PaymentPage = () => {
                 ...prev,
                 orderId: orderId.toString(),
                 amount: amount ? amount.toFixed(2).toString() : '',
-                paymentDate: '' // Залишаємо порожнім, щоб користувач ввів поточну дату
+                paymentDate: ''
             }));
             if (formRef.current) {
                 formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
-    }, [location.state]); // Залежить від location.state, щоб реагувати на перехід з OrdersPage
+    }, [location.state]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -136,29 +129,23 @@ const PaymentPage = () => {
             };
 
             const res = await axios.post(API_ENDPOINTS.PAYMENTS, dataToSend, getAuthHeaders());
-            setPayments(prev => [...prev, res.data]);
+            // Додаємо новий платіж до всіх платежів, а потім loadAllData відфільтрує
+            setAllPayments(prev => [...prev, res.data]);
             setMessage('Платіж успішно створено! ✅');
 
-            // --- ДОДАНО: Оновлення статусу замовлення на бекенді на 'PAID' ---
             const orderIdToUpdate = parseInt(formData.orderId, 10);
             try {
-                // Припускаємо, що бекенд має ендпоінт для встановлення статусу "PAID"
-                // Якщо ваш бекенд очікує тіло запиту { status: 'PAID' }, змініть на:
-                // await axios.put(`${API_ENDPOINTS.ORDERS}/${orderIdToUpdate}`, { status: 'PAID' }, getAuthHeaders());
-                // Якщо у вас окремий ендпоінт для оплати:
                 await axios.put(
-                    `${API_ENDPOINTS.ORDERS}/${orderIdToUpdate}/pay`, // Використовуємо '/pay' або інший ваш ендпоінт
-                    {}, // Може бути порожнім, якщо ендпоінт не вимагає тіла
+                    `${API_ENDPOINTS.ORDERS}/${orderIdToUpdate}/pay`,
+                    {},
                     getAuthHeaders()
                 );
-                // Після успішної оплати та оновлення статусу замовлення,
-                // перезавантажуємо дані, щоб оновити список "Замовлень, що очікують оплати"
+                // Перезавантажуємо всі дані, щоб оновити списки замовлень та платежів (відфільтрованих)
                 loadAllData();
             } catch (orderUpdateErr) {
                 console.error('Помилка оновлення статусу замовлення на PAID після оплати:', orderUpdateErr);
                 setError(prev => prev + ' (Але не вдалося оновити статус замовлення на бекенді на PAID).');
             }
-            // --- КІНЕЦЬ ДОДАНОГО БЛОКУ ---
 
             setFormData({ orderId: '', paymentDate: '', amount: '', method: '' });
 
@@ -210,11 +197,12 @@ const PaymentPage = () => {
             };
 
             const res = await axios.put(`${API_ENDPOINTS.PAYMENTS}/${selectedPayment.id}`, dataToSend, getAuthHeaders());
-            setPayments(prev => prev.map(p => (p.id === selectedPayment.id ? res.data : p)));
+            // Оновлюємо allPayments
+            setAllPayments(prev => prev.map(p => (p.id === selectedPayment.id ? res.data : p)));
             setMessage('Платіж успішно оновлено! ✅');
             setSelectedPayment(null);
             setFormData({ orderId: '', paymentDate: '', amount: '', method: '' });
-            loadAllData(); // Оновлюємо дані про замовлення, якщо платіж міг вплинути на їх статус
+            loadAllData(); // Перезавантажуємо дані, щоб оновити списки замовлень та платежів (відфільтрованих)
         } catch (err) {
             console.error('Помилка оновлення платежу:', err);
             if (err.response) {
@@ -238,9 +226,10 @@ const PaymentPage = () => {
         if (window.confirm('Ви впевнені, що хочете видалити цей платіж? Цю дію може змінити статус замовлення.')) {
             try {
                 await axios.delete(`${API_ENDPOINTS.PAYMENTS}/${id}`, getAuthHeaders());
-                setPayments(prev => prev.filter(p => p.id !== id));
+                // Видаляємо платіж з allPayments
+                setAllPayments(prev => prev.filter(p => p.id !== id));
                 setMessage('Платіж успішно видалено! 🗑️');
-                loadAllData(); // Оновлюємо дані про замовлення, оскільки видалення платежу може змінити їх статус
+                loadAllData(); // Перезавантажуємо дані, щоб оновити списки замовлень та платежів (відфільтрованих)
             } catch (err) {
                 console.error('Помилка видалення платежу:', err);
                 if (err.response) {
@@ -265,8 +254,17 @@ const PaymentPage = () => {
         }
     };
 
+    // Отримуємо ID замовлень поточного користувача
+    const currentUserOrderIds = new Set(userOrders.map(order => order.id));
+
     // Фільтруємо замовлення, що очікують оплати, з завантажених замовлень користувача
-    const unpaidOrders = orders.filter(order => order.status === 'PENDING');
+    const unpaidOrders = userOrders.filter(order => order.status === 'PENDING');
+
+    // ФІЛЬТРУЄМО ВСІ ПЛАТЕЖІ, ЩОБ ПОКАЗУВАТИ ТІЛЬКИ ПЛАТЕЖІ ПОТОЧНОГО КОРИСТУВАЧА
+    // Припускаємо, що кожен платіж має orderId, і що ми вже завантажили замовлення поточного користувача
+    const userPayments = allPayments.filter(payment =>
+        currentUserOrderIds.has(payment.orderId)
+    );
 
     if (loading) {
         return (
@@ -355,7 +353,7 @@ const PaymentPage = () => {
                                         >
                                             <option value="">Виберіть замовлення</option>
                                             {/* Тепер у цьому списку будуть ТІЛЬКИ замовлення поточного користувача */}
-                                            {orders.map(order => (
+                                            {userOrders.map(order => (
                                                 <option key={order.id} value={order.id}>
                                                     Замовлення #{order.id} {order.description ? ` - ${order.description}` : ''} (Статус: {order.status})
                                                 </option>
@@ -434,8 +432,8 @@ const PaymentPage = () => {
                 </Card>
 
                 {/* Список платежів */}
-                <h2 className="text-center mb-4 text-dark">Існуючі платежі</h2>
-                {payments.length === 0 ? (
+                <h2 className="text-center mb-4 text-dark">Мої платежі</h2> {/* Змінено заголовок */}
+                {userPayments.length === 0 ? ( // Використовуємо userPayments
                     <p className="text-center text-muted">Платежів не знайдено. 😔</p>
                 ) : (
                     <div className="table-responsive bg-white rounded-3 shadow border">
@@ -451,7 +449,7 @@ const PaymentPage = () => {
                             </tr>
                             </thead>
                             <tbody>
-                            {payments.map(payment => (
+                            {userPayments.map(payment => ( // Використовуємо userPayments
                                 <tr key={payment.id}>
                                     <td className="py-3 px-4 text-sm text-dark">{payment.id}</td>
                                     <td className="py-3 px-4 text-sm text-muted">{payment.orderId}</td>
