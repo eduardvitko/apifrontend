@@ -3,8 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
-// Рекомендовано централізувати URL-адреси
-// Приклад: src/config.js
+// Конфігурація API
 export const API_ENDPOINTS = {
     BASE_URL: 'http://localhost:8080/api',
     PAYMENTS: 'http://localhost:8080/api/payments',
@@ -17,6 +16,8 @@ const OrdersPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [sortBy, setSortBy] = useState('date'); // date або status
+    const [sortOrder, setSortOrder] = useState('desc'); // asc або desc
     const navigate = useNavigate();
 
     const getToken = () => localStorage.getItem('jwt');
@@ -27,7 +28,6 @@ const OrdersPage = () => {
         }
     });
 
-    // Функція для отримання замовлень (всіх замовлень поточного користувача)
     const fetchOrders = async () => {
         setLoading(true);
         setError('');
@@ -45,7 +45,7 @@ const OrdersPage = () => {
             const userId = userResponse.data.id;
 
             const ordersResponse = await axios.get(`${API_ENDPOINTS.ORDERS}/user/${userId}`, getAuthHeaders());
-            setOrders(ordersResponse.data); // Зберігаємо усі замовлення користувача
+            setOrders(ordersResponse.data);
 
         } catch (err) {
             console.error("Помилка завантаження замовлень:", err);
@@ -66,13 +66,34 @@ const OrdersPage = () => {
     };
 
     useEffect(() => {
-        fetchOrders(); // Завантажуємо замовлення при першому рендері сторінки
+        fetchOrders();
     }, [navigate]);
 
-    const handleCancelOrder = async (orderId) => {
-        if (!window.confirm('Ви дійсно хочете скасувати це замовлення?')) {
-            return;
+    // Функції сортування
+    const sortOrders = (orders) => {
+        const ordersCopy = [...orders];
+        if (sortBy === 'date') {
+            ordersCopy.sort((a, b) => {
+                const dateA = new Date(a.orderDate);
+                const dateB = new Date(b.orderDate);
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+        } else if (sortBy === 'status') {
+            // Приклад порядку статусів
+            const statusOrder = ['PENDING', 'PAID', 'COMPLETED', 'CANCELLED'];
+            ordersCopy.sort((a, b) => {
+                const indexA = statusOrder.indexOf(a.status);
+                const indexB = statusOrder.indexOf(b.status);
+                return sortOrder === 'asc' ? indexA - indexB : indexB - indexA;
+            });
         }
+        return ordersCopy;
+    };
+
+    const sortedOrders = sortOrders(orders);
+
+    const handleCancelOrder = async (orderId) => {
+        if (!window.confirm('Ви дійсно хочете скасувати це замовлення?')) return;
 
         setError('');
         setMessage('');
@@ -81,7 +102,6 @@ const OrdersPage = () => {
             await axios.put(`${API_ENDPOINTS.ORDERS}/${orderId}/cancel`, {}, getAuthHeaders());
             setMessage('Замовлення успішно скасовано! ❌');
 
-            // Оновлюємо статус в локальному стані, щоб зміни відобразилися миттєво
             setOrders(prevOrders =>
                 prevOrders.map(order =>
                     order.id === orderId ? { ...order, status: 'CANCELLED' } : order
@@ -94,9 +114,7 @@ const OrdersPage = () => {
     };
 
     const handleDeleteOrder = async (orderId) => {
-        if (!window.confirm('Ви дійсно хочете видалити це замовлення? Цю дію не можна буде скасувати.')) {
-            return;
-        }
+        if (!window.confirm('Ви дійсно хочете видалити це замовлення? Цю дію не можна буде скасувати.')) return;
 
         setError('');
         setMessage('');
@@ -105,7 +123,6 @@ const OrdersPage = () => {
             await axios.delete(`${API_ENDPOINTS.ORDERS}/delete/${orderId}`, getAuthHeaders());
             setMessage('Замовлення успішно видалено! 🗑️');
 
-            // Видаляємо замовлення зі списку
             setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
         } catch (err) {
             console.error('Помилка видалення замовлення:', err);
@@ -114,7 +131,6 @@ const OrdersPage = () => {
     };
 
     const handlePayOrder = (orderId, orderTotal) => {
-        // Перенаправляємо на сторінку платежів, передаючи дані замовлення через state
         navigate('/payments', { state: { orderId, amount: orderTotal } });
     };
 
@@ -132,13 +148,38 @@ const OrdersPage = () => {
     return (
         <Container fluid className="py-5 bg-light">
             <Container className="bg-white p-5 rounded-3 shadow border">
-                <h1 className="text-center mb-5 text-primary fw-bold">
-                    Мої Замовлення
-                </h1>
+                <h1 className="text-center mb-4 text-primary fw-bold">Мої Замовлення</h1>
 
-                <Button variant="secondary" onClick={() => navigate(-1)} className="mb-4">
-                    &#8592; Назад
-                </Button>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <Button variant="secondary" onClick={() => navigate(-1)}>
+                        &#8592; Назад
+                    </Button>
+
+                    <div>
+                        <label htmlFor="sortBy" className="me-2 fw-semibold">
+                            Сортувати за:
+                        </label>
+                        <select
+                            id="sortBy"
+                            value={sortBy}
+                            onChange={e => setSortBy(e.target.value)}
+                            className="form-select d-inline-block w-auto me-3"
+                        >
+                            <option value="date">Датою</option>
+                            <option value="status">Статусом</option>
+                        </select>
+
+                        <select
+                            id="sortOrder"
+                            value={sortOrder}
+                            onChange={e => setSortOrder(e.target.value)}
+                            className="form-select d-inline-block w-auto"
+                        >
+                            <option value="asc">За зростанням</option>
+                            <option value="desc">За спаданням</option>
+                        </select>
+                    </div>
+                </div>
 
                 {error && (
                     <Alert variant="danger" className="mb-4">
@@ -151,31 +192,43 @@ const OrdersPage = () => {
                     </Alert>
                 )}
 
-                {orders.length === 0 ? (
+                {sortedOrders.length === 0 ? (
                     <p className="text-center text-muted fs-5">
                         У вас поки що немає замовлень. 😔 Можливо, час щось замовити?
                     </p>
                 ) : (
-                    <Row xs={1} lg={2} className="g-4">
-                        {orders.map(order => (
+                    <Row xs={1} sm={2} md={3} lg={3} className="g-4">
+                        {sortedOrders.map(order => (
                             <Col key={order.id}>
-                                <Card className="h-100 shadow-sm border-secondary transform-hover">
-                                    <Card.Header className="bg-light text-dark fw-bold d-flex justify-content-between align-items-center">
+                                <Card
+                                    className="h-100 shadow-sm border-secondary transform-hover"
+                                    style={{ padding: '16px', fontSize: '1rem' }}
+                                >
+                                    <Card.Header
+                                        className="bg-light text-dark fw-bold d-flex justify-content-between align-items-center"
+                                        style={{ fontSize: '1.1rem', padding: '10px 16px' }}
+                                    >
                                         Замовлення #{order.id}
-                                        <span className={`badge ${
-                                            order.status === 'CANCELLED' ? 'bg-danger' :
-                                                order.status === 'PAID' || order.status === 'COMPLETED' ? 'bg-success' : // Відображаємо PAID та COMPLETED як успішні
-                                                    'bg-warning text-dark'
-                                        }`}>
+                                        <span
+                                            className={`badge ${
+                                                order.status === 'CANCELLED'
+                                                    ? 'bg-danger'
+                                                    : order.status === 'PAID' || order.status === 'COMPLETED'
+                                                        ? 'bg-success'
+                                                        : 'bg-warning text-dark'
+                                            }`}
+                                        >
                                             {order.status}
                                         </span>
                                     </Card.Header>
-                                    <Card.Body>
-                                        <Card.Text className="text-muted mb-2">
+                                    <Card.Body style={{ padding: '16px' }}>
+                                        <Card.Text className="text-muted mb-3" style={{ fontSize: '0.95rem' }}>
                                             Дата замовлення: {new Date(order.orderDate).toLocaleString()}
                                         </Card.Text>
-                                        <h5 className="mb-3 text-dark">Деталі замовлення:</h5>
-                                        <Table striped bordered hover size="sm">
+                                        <h5 className="mb-3 text-dark" style={{ fontSize: '1.1rem' }}>
+                                            Деталі замовлення:
+                                        </h5>
+                                        <Table striped bordered hover size="sm" style={{ fontSize: '0.95rem', marginBottom: '1rem' }}>
                                             <thead>
                                             <tr>
                                                 <th>Товар</th>
@@ -184,20 +237,22 @@ const OrdersPage = () => {
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            {order.items && order.items.map(item => (
-                                                <tr key={item.id}>
-                                                    <td>{item.productName}</td>
-                                                    <td>{item.quantity}</td>
-                                                    <td>{item.price.toFixed(2)} ₴</td>
-                                                </tr>
-                                            ))}
+                                            {order.items &&
+                                                order.items.map(item => (
+                                                    <tr key={item.id}>
+                                                        <td>{item.productName}</td>
+                                                        <td>{item.quantity}</td>
+                                                        <td>{item.price.toFixed(2)} ₴</td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </Table>
-                                        <h4 className="text-end text-primary mt-3">
-                                            Загальна сума: <span className="fw-bold">{order.total ? order.total.toFixed(2) : '0.00'} ₴</span>
+                                        <h4 className="text-end text-primary mt-3" style={{ fontSize: '1.1rem' }}>
+                                            Загальна сума:{' '}
+                                            <span className="fw-bold">{order.total ? order.total.toFixed(2) : '0.00'} ₴</span>
                                         </h4>
 
-                                        <div className="d-flex flex-column flex-md-row justify-content-end gap-2 mt-3">
+                                        <div className="d-flex flex-column flex-md-row justify-content-end gap-3 mt-3">
                                             {order.status === 'PENDING' && (
                                                 <>
                                                     <Button
@@ -217,7 +272,6 @@ const OrdersPage = () => {
                                                 </>
                                             )}
 
-                                            {/* Кнопка "Сплачено" тепер відображається для PAID та COMPLETED */}
                                             {(order.status === 'PAID' || order.status === 'COMPLETED') && (
                                                 <Button variant="success" disabled className="flex-grow-1 flex-md-grow-0">
                                                     <i className="bi bi-check-circle me-2"></i> Сплачено

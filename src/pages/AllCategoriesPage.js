@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
 const AllCategoriesPage = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
-    const token = localStorage.getItem('jwt');
-
     const navigate = useNavigate();
+    const token = localStorage.getItem('jwt');
 
     useEffect(() => {
         fetchCategories();
@@ -36,25 +33,27 @@ const AllCategoriesPage = () => {
 
     return (
         <div className="container mt-5">
-            <h3>Обирай категорію</h3>
-            <table className="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Назва</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <button className="btn btn-secondary mb-4" onClick={() => navigate(-1)}>
+                ← Назад
+            </button>
+            <h3 className="mb-4">Обирай категорію</h3>
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 {categories.map(category => (
-                    <tr key={category.id}>
-                        <td>
-                            <Link to={`/categories/${category.id}/products`}>
-                                {category.name}
-                            </Link>
-                        </td>
-                    </tr>
+                    <div className="col" key={category.id}>
+                        <div className="card h-100 shadow-sm border-primary">
+                            <div className="card-body d-flex flex-column justify-content-between">
+                                <h5 className="card-title text-center">{category.name}</h5>
+                                <button
+                                    className="btn btn-outline-primary mt-3"
+                                    onClick={() => navigate(`/categories/${category.id}/products`)}
+                                >
+                                    Переглянути товари
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 ))}
-                </tbody>
-            </table>
+            </div>
         </div>
     );
 };

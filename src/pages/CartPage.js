@@ -13,7 +13,7 @@ const CartPage = () => {
 
     useEffect(() => {
         if (!token) {
-            setMessage('Ви не авторизовані. Будь ласка, увійдіть.');
+            setMessage('🔐 Ви не авторизовані. Перенаправлення...');
             setTimeout(() => navigate('/login'), 2000);
             return;
         }
@@ -24,8 +24,8 @@ const CartPage = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserId(response.data.id);
-            } catch (error) {
-                setMessage('Не вдалося отримати дані користувача');
+            } catch {
+                setMessage('❌ Не вдалося отримати дані користувача');
             }
         };
 
@@ -36,12 +36,12 @@ const CartPage = () => {
 
     const handleOrder = async () => {
         if (!token || !userId) {
-            setMessage('Ви не авторизовані. Будь ласка, увійдіть.');
+            setMessage('🔐 Ви не авторизовані.');
             return;
         }
 
         if (cart.length === 0) {
-            setMessage('Корзина порожня.');
+            setMessage('🛒 Корзина порожня.');
             return;
         }
 
@@ -60,11 +60,11 @@ const CartPage = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setMessage('Замовлення успішно створено!');
+            setMessage('✅ Замовлення успішно створено!');
             clearCart();
             setTimeout(() => navigate('/orders'), 1500);
-        } catch (e) {
-            setMessage('Помилка при створенні замовлення');
+        } catch {
+            setMessage('❌ Помилка при створенні замовлення');
         } finally {
             setLoading(false);
         }
@@ -72,66 +72,93 @@ const CartPage = () => {
 
     return (
         <div className="container mt-5">
-            <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
-                Назад
-            </button>
-            <h3>🛒 Корзина</h3>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h3>🛒 Моя корзина</h3>
+                <button className="btn btn-outline-secondary" onClick={() => window.history.back()}>
+                    ⬅ Назад
+                </button>
+            </div>
 
-            {message && <p className={`text-${message.toLowerCase().includes('помилка') ? 'danger' : 'success'}`}>{message}</p>}
+            {message && (
+                <div className={`alert ${message.includes('Помилка') || message.includes('❌') ? 'alert-danger' : 'alert-success'}`}>
+                    {message}
+                </div>
+            )}
 
             {cart.length === 0 ? (
-                <p>Ваша корзина пуста.</p>
+                <div className="alert alert-info">Ваша корзина порожня.</div>
             ) : (
                 <>
-                    <table className="table table-bordered">
-                        <thead>
-                        <tr>
-                            <th>Назва</th>
-                            <th>Кількість</th>
-                            <th>Ціна</th>
-                            <th>Дія</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {cart.map(item => {
-                            const inputId = `quantity-${item.productId}`;
-                            return (
+                    <div className="table-responsive">
+                        <table className="table table-hover align-middle">
+                            <thead className="table-light">
+                            <tr>
+                                <th>Назва</th>
+                                <th style={{ width: 110 }}>Кількість</th>
+                                <th>Ціна</th>
+                                <th>Дія</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {cart.map(item => (
                                 <tr key={item.productId}>
                                     <td>{item.name}</td>
                                     <td>
-                                        <label htmlFor={inputId} className="visually-hidden">
-                                            Кількість для {item.name}
-                                        </label>
                                         <input
                                             type="number"
                                             min="1"
-                                            id={inputId}
-                                            name={inputId}
+                                            className="form-control"
                                             value={item.quantity}
-                                            onChange={e => changeQuantity(item.productId, Number(e.target.value))}
-                                            style={{ width: '60px' }}
+                                            onChange={e =>
+                                                changeQuantity(item.productId, Number(e.target.value))
+                                            }
                                         />
                                     </td>
-                                    <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(item.price)}</td>
+                                    <td>
+                                        {new Intl.NumberFormat('uk-UA', {
+                                            style: 'currency',
+                                            currency: 'UAH',
+                                        }).format(item.price)}
+                                    </td>
                                     <td>
                                         <button
-                                            className="btn btn-danger btn-sm"
-                                            onClick={() => {
-                                                if (window.confirm('Ви дійсно хочете видалити цей товар?')) removeItem(item.productId);
-                                            }}
+                                            className="btn btn-outline-danger btn-sm"
+                                            onClick={() =>
+                                                window.confirm('Видалити цей товар?') &&
+                                                removeItem(item.productId)
+                                            }
                                         >
-                                            Видалити
+                                            🗑 Видалити
                                         </button>
                                     </td>
                                 </tr>
-                            );
-                        })}
-                        </tbody>
-                    </table>
-                    <p><strong>Загальна сума:</strong> {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(total)}</p>
-                    <button className="btn btn-success" onClick={handleOrder} disabled={loading}>
-                        {loading ? 'Оформлення...' : 'Оформити замовлення'}
-                    </button>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="d-flex justify-content-between align-items-center mt-4">
+                        <h5>
+                            Загальна сума:{' '}
+                            <span className="text-success">
+                                {new Intl.NumberFormat('uk-UA', {
+                                    style: 'currency',
+                                    currency: 'UAH',
+                                }).format(total)}
+                            </span>
+                        </h5>
+
+                        <button className="btn btn-success" onClick={handleOrder} disabled={loading}>
+                            {loading ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status" />
+                                    Оформлення...
+                                </>
+                            ) : (
+                                '✅ Оформити замовлення'
+                            )}
+                        </button>
+                    </div>
                 </>
             )}
         </div>

@@ -16,28 +16,26 @@ function RegisterPage() {
         setSuccess(false);
         setErrorDetails(null);
 
-        // === Клієнтська валідація ===
         const usernameRegex = /^[a-zA-Zа-яА-ЯіїєІЇЄґҐ' -]+$/;
         const phoneRegex = /^(\+?\d{10,15})$/;
 
         const localErrors = [];
         if (!usernameRegex.test(form.username)) {
-            localErrors.push({ field: 'username', message: 'Ім’я користувача має містити лише літери (укр/англ)' });
+            localErrors.push({ field: 'Ім’я', message: 'має містити лише літери (укр/англ)' });
         }
         if (!phoneRegex.test(form.phone)) {
-            localErrors.push({ field: 'phone', message: 'Телефон має містити лише цифри і може починатись з +' });
+            localErrors.push({ field: 'Телефон', message: 'має містити лише цифри і може починатись з +' });
         }
 
         if (localErrors.length > 0) {
-            setMessage('Форма містить помилки');
+            setMessage('Форма містить помилки:');
             setErrorDetails(localErrors);
             return;
         }
 
-        // === Відправка на бекенд ===
         try {
-            const res = await registerUser(form);
-            setMessage('Реєстрація пройшла успішно');
+            await registerUser(form);
+            setMessage('✅ Реєстрація пройшла успішно!');
             setSuccess(true);
         } catch (err) {
             setSuccess(false);
@@ -50,62 +48,70 @@ function RegisterPage() {
                     setErrorDetails(error.errors || null);
                 }
             } else {
-                setMessage('Помилка з’єднання із сервером');
+                setMessage('⚠️ Помилка з’єднання із сервером');
             }
         }
     };
 
     return (
-        <div className="container mt-5" style={{ maxWidth: '500px' }}>
-            <h2 className="mb-4 text-center">Register</h2>
+        <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+            <div className="card shadow p-4" style={{ maxWidth: '500px', width: '100%' }}>
+                <h3 className="mb-4 text-center">📝 Реєстрація</h3>
 
-            {message && (
-                <div className={`alert ${success ? 'alert-success' : 'alert-danger'}`} role="alert">
-                    <p>{message}</p>
-                    {errorDetails && Array.isArray(errorDetails) && (
-                        <ul className="mb-0">
-                            {errorDetails.map((err, idx) => (
-                                <li key={idx}>{err.field}: {err.message}</li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            )}
+                {message && (
+                    <div className={`alert ${success ? 'alert-success' : 'alert-danger'}`}>
+                        <p className="mb-1">{message}</p>
+                        {errorDetails && Array.isArray(errorDetails) && (
+                            <ul className="mb-0 ps-3">
+                                {errorDetails.map((err, idx) => (
+                                    <li key={idx}>
+                                        <strong>{err.field}</strong>: {err.message}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
 
-            <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label>Username</label>
-                    <input
-                        className="form-control"
-                        name="username"
-                        value={form.username}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label>Phone</label>
-                    <input
-                        className="form-control"
-                        name="phone"
-                        value={form.phone}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label>Password</label>
-                    <input
-                        className="form-control"
-                        type="password"
-                        name="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <button className="btn btn-primary w-100" type="submit">Register</button>
-            </form>
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-3">
+                        <label className="form-label">Ім’я користувача</label>
+                        <input
+                            className="form-control"
+                            name="username"
+                            value={form.username}
+                            onChange={handleChange}
+                            required
+                            autoFocus
+                        />
+                    </div>
+                    <div className="mb-3">
+                        <label className="form-label">Телефон</label>
+                        <input
+                            className="form-control"
+                            name="phone"
+                            value={form.phone}
+                            onChange={handleChange}
+                            placeholder="+380..."
+                            required
+                        />
+                    </div>
+                    <div className="mb-3">
+                        <label className="form-label">Пароль</label>
+                        <input
+                            className="form-control"
+                            type="password"
+                            name="password"
+                            value={form.password}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+                    <button className="btn btn-primary w-100" type="submit">
+                        Зареєструватися
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }

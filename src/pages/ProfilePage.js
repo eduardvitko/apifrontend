@@ -12,7 +12,7 @@ const ProfilePage = () => {
         const fetchProfile = async () => {
             const token = localStorage.getItem('jwt');
             if (!token) {
-                setError('Not authenticated');
+                setError('Ви не авторизовані');
                 setLoading(false);
                 return;
             }
@@ -27,7 +27,7 @@ const ProfilePage = () => {
 
                 setProfile(res.data);
             } catch (err) {
-                setError('Failed to load profile');
+                setError('Не вдалося завантажити профіль');
             } finally {
                 setLoading(false);
             }
@@ -39,8 +39,8 @@ const ProfilePage = () => {
     if (loading) {
         return (
             <div className="text-center mt-5">
-                <div className="spinner-border text-primary" role="status"></div>
-                <p className="mt-3">Loading profile...</p>
+                <div className="spinner-border text-primary" role="status" />
+                <p className="mt-3">Завантаження профілю...</p>
             </div>
         );
     }
@@ -49,47 +49,50 @@ const ProfilePage = () => {
         return <div className="alert alert-danger mt-4 text-center">{error}</div>;
     }
 
-    // Перевірка, чи є у користувача роль ADMIN
     const isAdmin = profile.roles?.includes('ADMIN');
 
     return (
         <div className="container mt-5" style={{ maxWidth: '600px' }}>
-            <h3 className="mb-4">Welcome, {profile.username}</h3>
-            <ul className="list-group">
-                <li className="list-group-item"><strong>Phone:</strong> {profile.phone}</li>
-                <li className="list-group-item">
-                    <strong>Roles:</strong>
-                    {profile.roles?.map(role => (
-                        <span key={role} className="badge bg-secondary ms-2">{role}</span>
-                    ))}
-                </li>
-            </ul>
-            <div className="mt-4 d-flex gap-3 flex-wrap">
-                <button
-                    className="btn btn-primary"
-                    onClick={() => navigate('/orders')}
-                >
-                    Мої замовлення
-                </button>
+            <div className="card shadow">
+                <div className="card-body">
+                    <h4 className="card-title mb-4 text-center">👤 Профіль користувача</h4>
 
-                {isAdmin && (
-                    <button
-                        className="btn btn-warning"
-                        onClick={() => navigate('/admin')}
-                    >
-                        Адмін панель
-                    </button>
-                )}
+                    <ul className="list-group mb-4">
+                        <li className="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Ім'я користувача:</strong> <span>{profile.username}</span>
+                        </li>
+                        <li className="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Телефон:</strong> <span>{profile.phone}</span>
+                        </li>
+                        <li className="list-group-item d-flex justify-content-between align-items-center">
+                            <strong>Ролі:</strong>
+                            <span>
+                                {profile.roles?.map(role => (
+                                    <span key={role} className="badge bg-secondary ms-2">{role}</span>
+                                ))}
+                            </span>
+                        </li>
+                    </ul>
 
-                <button
-                    className="btn btn-outline-danger"
-                    onClick={() => {
-                        localStorage.removeItem('jwt');
-                        navigate('/login');
-                    }}
-                >
-                    Вийти
-                </button>
+                    <div className="d-flex flex-wrap gap-3 justify-content-center">
+                        <button className="btn btn-primary" onClick={() => navigate('/orders')}>
+                            📦 Мої замовлення
+                        </button>
+
+                        {isAdmin && (
+                            <button className="btn btn-warning" onClick={() => navigate('/admin')}>
+                                ⚙️ Адмін панель
+                            </button>
+                        )}
+
+                        <button className="btn btn-outline-danger" onClick={() => {
+                            localStorage.removeItem('jwt');
+                            navigate('/login');
+                        }}>
+                            🚪 Вийти
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
