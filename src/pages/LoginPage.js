@@ -44,7 +44,10 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+        <div
+            className="container d-flex justify-content-center"
+            style={{ height: 'auto', paddingTop: '100px' }}
+        >
             <div className="card p-4 shadow" style={{ maxWidth: '400px', width: '100%' }}>
                 <h3 className="mb-4 text-center">🔐 Вхід</h3>
 
@@ -79,7 +82,7 @@ const LoginPage = () => {
                     <button type="submit" className="btn btn-primary w-100" disabled={loading}>
                         {loading ? (
                             <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" />
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                 Вхід...
                             </>
                         ) : 'Увійти'}

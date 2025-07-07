@@ -54,7 +54,10 @@ function RegisterPage() {
     };
 
     return (
-        <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+        <div
+            className="container d-flex justify-content-center align-items-start"
+            style={{ paddingTop: '40px', paddingBottom: '40px', minHeight: '100vh' }}
+        >
             <div className="card shadow p-4" style={{ maxWidth: '500px', width: '100%' }}>
                 <h3 className="mb-4 text-center">📝 Реєстрація</h3>
 
