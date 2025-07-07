@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { registerUser } from '../api';
 
 function RegisterPage() {
+    const { t } = useTranslation();
     const [form, setForm] = useState({ username: '', password: '', phone: '' });
     const [message, setMessage] = useState('');
     const [success, setSuccess] = useState(false);
@@ -21,21 +23,21 @@ function RegisterPage() {
 
         const localErrors = [];
         if (!usernameRegex.test(form.username)) {
-            localErrors.push({ field: 'Ім’я', message: 'має містити лише літери (укр/англ)' });
+            localErrors.push({ field: t('reg_field_username'), message: t('reg_error_username') });
         }
         if (!phoneRegex.test(form.phone)) {
-            localErrors.push({ field: 'Телефон', message: 'має містити лише цифри і може починатись з +' });
+            localErrors.push({ field: t('reg_field_phone'), message: t('reg_error_phone') });
         }
 
         if (localErrors.length > 0) {
-            setMessage('Форма містить помилки:');
+            setMessage(t('reg_form_error'));
             setErrorDetails(localErrors);
             return;
         }
 
         try {
             await registerUser(form);
-            setMessage('✅ Реєстрація пройшла успішно!');
+            setMessage(t('reg_success'));
             setSuccess(true);
         } catch (err) {
             setSuccess(false);
@@ -44,11 +46,11 @@ function RegisterPage() {
                 if (typeof error === 'string') {
                     setMessage(error);
                 } else if (typeof error === 'object') {
-                    setMessage(error.error || 'Помилка реєстрації');
+                    setMessage(error.error || t('reg_fail'));
                     setErrorDetails(error.errors || null);
                 }
             } else {
-                setMessage('⚠️ Помилка з’єднання із сервером');
+                setMessage(t('reg_server_error'));
             }
         }
     };
@@ -59,7 +61,7 @@ function RegisterPage() {
             style={{ paddingTop: '40px', paddingBottom: '40px', minHeight: '100vh' }}
         >
             <div className="card shadow p-4" style={{ maxWidth: '500px', width: '100%' }}>
-                <h3 className="mb-4 text-center">📝 Реєстрація</h3>
+                <h3 className="mb-4 text-center">📝 {t('reg_title')}</h3>
 
                 {message && (
                     <div className={`alert ${success ? 'alert-success' : 'alert-danger'}`}>
@@ -78,7 +80,7 @@ function RegisterPage() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
-                        <label className="form-label">Ім’я користувача</label>
+                        <label className="form-label">{t('reg_field_username')}</label>
                         <input
                             className="form-control"
                             name="username"
@@ -89,7 +91,7 @@ function RegisterPage() {
                         />
                     </div>
                     <div className="mb-3">
-                        <label className="form-label">Телефон</label>
+                        <label className="form-label">{t('reg_field_phone')}</label>
                         <input
                             className="form-control"
                             name="phone"
@@ -100,7 +102,7 @@ function RegisterPage() {
                         />
                     </div>
                     <div className="mb-3">
-                        <label className="form-label">Пароль</label>
+                        <label className="form-label">{t('reg_field_password')}</label>
                         <input
                             className="form-control"
                             type="password"
@@ -111,7 +113,7 @@ function RegisterPage() {
                         />
                     </div>
                     <button className="btn btn-primary w-100" type="submit">
-                        Зареєструватися
+                        {t('reg_button')}
                     </button>
                 </form>
             </div>

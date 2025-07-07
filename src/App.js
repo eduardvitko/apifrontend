@@ -22,15 +22,23 @@ import SearchResultsPage from './pages/SearchResultsPage';
 import ImagePage from './pages/ImagePage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 
+
 import Navbar from './pages/Navbar'; // компонент навігації з пошуком
+import './i18n';
+import { useTranslation } from 'react-i18next';
+
+const HomePage = () => {
+    const { t } = useTranslation();
+
+    return (
+        <div className="container mt-5">
+            <h1>{t('home_welcome')}</h1>
+            <p>{t('home_select_category')}</p>
+        </div>
+    );
+};
 
 
-const HomePage = () => (
-    <div className="container mt-5">
-        <h1>Ласкаво просимо до магазину!</h1>
-        <p>Оберіть категорію або увійдіть у свій профіль.</p>
-    </div>
-);
 
 function App() {
     return (

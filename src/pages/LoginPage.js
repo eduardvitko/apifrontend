@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage = () => {
+    const { t } = useTranslation();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -37,7 +39,7 @@ const LoginPage = () => {
                 navigate('/profile');
             }
         } catch (err) {
-            setError('❌ Невірний логін або пароль.');
+            setError(t('login_error'));
         } finally {
             setLoading(false);
         }
@@ -49,13 +51,13 @@ const LoginPage = () => {
             style={{ height: 'auto', paddingTop: '100px' }}
         >
             <div className="card p-4 shadow" style={{ maxWidth: '400px', width: '100%' }}>
-                <h3 className="mb-4 text-center">🔐 Вхід</h3>
+                <h3 className="mb-4 text-center">🔐 {t('login_title')}</h3>
 
                 {error && <div className="alert alert-danger">{error}</div>}
 
                 <form onSubmit={handleLogin}>
                     <div className="mb-3">
-                        <label htmlFor="username" className="form-label">Логін</label>
+                        <label htmlFor="username" className="form-label">{t('login_username')}</label>
                         <input
                             type="text"
                             id="username"
@@ -68,7 +70,7 @@ const LoginPage = () => {
                     </div>
 
                     <div className="mb-3">
-                        <label htmlFor="password" className="form-label">Пароль</label>
+                        <label htmlFor="password" className="form-label">{t('login_password')}</label>
                         <input
                             type="password"
                             id="password"
@@ -83,9 +85,9 @@ const LoginPage = () => {
                         {loading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                Вхід...
+                                {t('login_loading')}
                             </>
-                        ) : 'Увійти'}
+                        ) : t('login_button')}
                     </button>
                 </form>
             </div>
