@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from './UseCart';
 
 const CartPage = () => {
-    const [cart, setCart] = useState([]);
+    const { cart, changeQuantity, removeItem, clearCart } = useCart();
     const [userId, setUserId] = useState(null);
-    const token = localStorage.getItem('jwt');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const token = localStorage.getItem('jwt');
 
     useEffect(() => {
+        if (!token) {
+            setMessage('Ви не авторизовані. Будь ласка, увійдіть.');
+            setTimeout(() => navigate('/login'), 2000);
+            return;
+        }
+
         const fetchUser = async () => {
-            if (!token) {
-                setMessage('Ви не авторизовані. Будь ласка, увійдіть.');
-                return;
-            }
             try {
                 const response = await axios.get('http://localhost:8080/api/user/me', {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserId(response.data.id);
             } catch (error) {
@@ -27,28 +30,9 @@ const CartPage = () => {
         };
 
         fetchUser();
+    }, [token, navigate]);
 
-        const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-        setCart(storedCart);
-    }, [token]);
-
-    const updateCart = (updatedCart) => {
-        setCart(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-    };
-
-    const handleQuantityChange = (productId, newQuantity) => {
-        if (newQuantity < 1) return; // мінімальна кількість 1
-        const updatedCart = cart.map(item =>
-            item.productId === productId ? { ...item, quantity: newQuantity } : item
-        );
-        updateCart(updatedCart);
-    };
-
-    const removeFromCart = (productId) => {
-        const updatedCart = cart.filter(item => item.productId !== productId);
-        updateCart(updatedCart);
-    };
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const handleOrder = async () => {
         if (!token || !userId) {
@@ -56,26 +40,29 @@ const CartPage = () => {
             return;
         }
 
+        if (cart.length === 0) {
+            setMessage('Корзина порожня.');
+            return;
+        }
+
         setLoading(true);
+        setMessage('');
         try {
             const orderItems = cart.map(item => ({
                 productId: item.productId,
                 quantity: item.quantity,
-                price: item.price
+                price: item.price,
             }));
 
             await axios.post(
-                "http://localhost:8080/api/orders/create",
+                'http://localhost:8080/api/orders/create',
                 orderItems,
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
             setMessage('Замовлення успішно створено!');
-            localStorage.removeItem('cart');
-            setCart([]);
-            navigate('/orders'); // перенаправлення після створення
+            clearCart();
+            setTimeout(() => navigate('/orders'), 1500);
         } catch (e) {
             setMessage('Помилка при створенні замовлення');
         } finally {
@@ -83,19 +70,19 @@ const CartPage = () => {
         }
     };
 
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
     return (
         <div className="container mt-5">
             <button className="btn btn-secondary mt-3" onClick={() => window.history.back()}>
                 Назад
             </button>
             <h3>🛒 Корзина</h3>
-            {message && <p className="text-success">{message}</p>}
+
+            {message && <p className={`text-${message.toLowerCase().includes('помилка') ? 'danger' : 'success'}`}>{message}</p>}
+
             {cart.length === 0 ? (
                 <p>Ваша корзина пуста.</p>
             ) : (
-                <div>
+                <>
                     <table className="table table-bordered">
                         <thead>
                         <tr>
@@ -106,34 +93,46 @@ const CartPage = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {cart.map(item => (
-                            <tr key={item.productId}>
-                                <td>{item.name}</td>
-                                <td>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        value={item.quantity}
-                                        onChange={e => handleQuantityChange(item.productId, Number(e.target.value))}
-                                        style={{ width: '60px' }}
-                                    />
-                                </td>
-                                <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(item.price)}</td>
-                                <td>
-                                    <button className="btn btn-danger btn-sm"
-                                            onClick={() => removeFromCart(item.productId)}>
-                                        Видалити
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {cart.map(item => {
+                            const inputId = `quantity-${item.productId}`;
+                            return (
+                                <tr key={item.productId}>
+                                    <td>{item.name}</td>
+                                    <td>
+                                        <label htmlFor={inputId} className="visually-hidden">
+                                            Кількість для {item.name}
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            id={inputId}
+                                            name={inputId}
+                                            value={item.quantity}
+                                            onChange={e => changeQuantity(item.productId, Number(e.target.value))}
+                                            style={{ width: '60px' }}
+                                        />
+                                    </td>
+                                    <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(item.price)}</td>
+                                    <td>
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => {
+                                                if (window.confirm('Ви дійсно хочете видалити цей товар?')) removeItem(item.productId);
+                                            }}
+                                        >
+                                            Видалити
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                         </tbody>
                     </table>
                     <p><strong>Загальна сума:</strong> {new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(total)}</p>
                     <button className="btn btn-success" onClick={handleOrder} disabled={loading}>
                         {loading ? 'Оформлення...' : 'Оформити замовлення'}
                     </button>
-                </div>
+                </>
             )}
         </div>
     );

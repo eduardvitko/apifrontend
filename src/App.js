@@ -1,12 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import AllUsersPage from './pages/AllUsersPage';
-import AllCategoriesPage from "./pages/AllCategoriesPage";
-import AdminCategoriesPage from "./pages/AdminCategoriesPage";
+import AllCategoriesPage from './pages/AllCategoriesPage';
+import AdminCategoriesPage from './pages/AdminCategoriesPage';
 import AllProductsPage from './pages/AllProductsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import CreateProductPage from './pages/CreateProductPage';
@@ -17,13 +18,13 @@ import CreateOrderPage from './pages/CreateOrderPage';
 import CartPage from './pages/CartPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import PaymentPage from './pages/PaymentPage';
-
-
+import SearchResultsPage from './pages/SearchResultsPage';
 import ImagePage from './pages/ImagePage';
+import ProductDetailsPage from './pages/ProductDetailsPage';
+
+import Navbar from './pages/Navbar'; // компонент навігації з пошуком
 
 
-
-// Додаємо просту домашню сторінку
 const HomePage = () => (
     <div className="container mt-5">
         <h1>Ласкаво просимо до магазину!</h1>
@@ -34,22 +35,10 @@ const HomePage = () => (
 function App() {
     return (
         <Router>
-            <nav className="navbar navbar-expand navbar-dark bg-dark px-3">
-                <Link className="navbar-brand" to="/">My Store</Link>
-                <div className="navbar-nav">
-                    <Link className="nav-link" to="/register">Register</Link>
-                    <Link className="nav-link" to="/login">Login</Link>
-                    <Link className="nav-link" to="/profile">Profile</Link>
-                    <Link className="nav-link" to="/allCategories">Categories</Link>
-
-                </div>
-            </nav>
-
+            <Navbar />
             <div className="container mt-4">
                 <Routes>
-                    {/* Новий маршрут для "/" */}
                     <Route path="/" element={<HomePage />} />
-
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
@@ -68,12 +57,10 @@ function App() {
                     <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
                     <Route path="/admin/images" element={<ImagePage />} />
                     <Route path="/products/all" element={<AllProductsPage />} />
-                   // <Route path="/admin/images/:productId" element={<ImagePage />} />
-                    <Route path="/payments" element={<PaymentPage />
-                        }
-                    />
-
-
+                    {/* <Route path="/admin/images/:productId" element={<ImagePage />} /> */}
+                    <Route path="/payments" element={<PaymentPage />} />
+                    <Route path="/products/search" element={<SearchResultsPage />} />
+                    <Route path="/products/:id" element={<ProductDetailsPage />} />
                 </Routes>
             </div>
         </Router>
