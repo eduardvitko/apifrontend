@@ -58,8 +58,27 @@ const resources = {
             "categories_load_error": "Failed to load categories",
             "select_category": "Choose a category",
             "view_products": "View products",
-            "loading": "Loading...",
-            "back": "Back"
+
+            back: "Back",
+            products_in_category: "Products in Category",
+            image: "Image",
+            name: "Name",
+            description: "Description",
+            price: "Price",
+            stock: "Stock",
+            add_to_cart: "Add to cart",
+            adding: "Adding...",
+            no_image: "No image",
+            no_products: "No products in this category.",
+            loading: "Loading...",
+            not_authorized: "You are not authorized",
+            fetch_error: "Failed to load products",
+
+            "your_cart": "your_cart",
+            "remove": "remove",
+            "quantity": "quantity",
+            "total": "total",
+
 
 
 
@@ -118,13 +137,35 @@ const resources = {
     "select_category": "Обирай категорію",
     "view_products": "Переглянути товари",
     "loading": "Завантаження...",
-    "back": "Назад"
+    "back": "Назад",
+
+
+
+            products_in_category: "Товари в категорії",
+            image: "Зображення",
+            name: "Назва",
+            description: "Опис",
+            price: "Ціна",
+            stock: "Залишок",
+            add_to_cart: "Додати в корзину",
+            adding: "Додаємо...",
+            no_image: "Немає зображення",
+            no_products: "Немає товарів у цій категорії.",
+            not_authorized: "Ви не авторизовані",
+            fetch_error: "Не вдалося завантажити товари",
+
+            "your_cart": "Корзина",
+            "remove": "видалити",
+            "quantity": "кількість",
+            "total": "всього",
 
 
 
 
-}
+        }
+
     }
+
 };
 
 

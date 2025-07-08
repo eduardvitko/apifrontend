@@ -28,6 +28,9 @@ const Navbar = () => {
                 <Link className="nav-link" to="/login">{t('login').toLocaleLowerCase()}</Link>
                 <Link className="nav-link" to="/profile">{t('profile')}</Link>
                 <Link className="nav-link" to="/allCategories">{t('categories')}</Link>
+                <Link to="/cart" className="btn btn-outline-primary">
+                    🛒 {t('cart' )})
+                </Link>
             </div>
 
             <form className="d-flex ms-auto" onSubmit={handleSearchSubmit}>
@@ -39,6 +42,7 @@ const Navbar = () => {
                     onChange={(e) => setSearch(e.target.value)}
                 />
                 <button className="btn btn-outline-light" type="submit">🔍</button>
+
             </form>
 
             <div className="d-flex ms-3">

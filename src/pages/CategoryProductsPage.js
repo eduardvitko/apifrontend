@@ -1,37 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const CategoryProductsPage = () => {
     const { id } = useParams();
+    const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
+    const token = localStorage.getItem('jwt');
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [addingProductId, setAddingProductId] = useState(null);
 
-    const navigate = useNavigate();
-    const token = localStorage.getItem('jwt');
-
     useEffect(() => {
         if (!token) {
-            setError('Ви не авторизовані');
+            setError(t('not_authorized'));
             setLoading(false);
             return;
         }
         fetchProductsByCategory();
-    }, [id]);
+    }, [id, i18n.language]);
 
     const fetchProductsByCategory = async () => {
         setLoading(true);
         try {
             const response = await axios.get(`http://localhost:8080/api/products/by-category/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
-
             });
             setProducts(response.data);
             setError('');
         } catch (e) {
-            setError(e.response?.data?.message || 'Не вдалося завантажити товари');
+            setError(t('fetch_error'));
         } finally {
             setLoading(false);
         }
@@ -56,28 +57,39 @@ const CategoryProductsPage = () => {
 
         localStorage.setItem('cart', JSON.stringify(cart));
         setAddingProductId(null);
-
         navigate('/cart');
     };
 
-    if (loading) return <p>Завантаження...</p>;
+    const changeLanguage = (lng) => i18n.changeLanguage(lng);
+
+    if (loading) return <p>{t('loading')}</p>;
     if (error) return <p className="text-danger">{error}</p>;
 
     return (
         <div className="container mt-5">
-            <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>Назад</button>
-            <h3>Товари в категорії</h3>
+            {/* Language Switch */}
+            <div className="d-flex justify-content-end mb-3">
+                <button onClick={() => changeLanguage('ua')} className="btn btn-outline-primary btn-sm me-2">UA</button>
+                <button onClick={() => changeLanguage('en')} className="btn btn-outline-secondary btn-sm">EN</button>
+            </div>
+
+            <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
+                ← {t('back')}
+            </button>
+
+            <h3>{t('products_in_category')}</h3>
+
             {products.length === 0 ? (
-                <p>Немає товарів у цій категорії.</p>
+                <p>{t('no_products')}</p>
             ) : (
                 <table className="table table-bordered">
                     <thead>
                     <tr>
-                        <th>Зображення</th>
-                        <th>Назва</th>
-                        <th>Опис</th>
-                        <th>Ціна</th>
-                        <th>Залишок</th>
+                        <th>{t('image')}</th>
+                        <th>{t('name')}</th>
+                        <th>{t('description')}</th>
+                        <th>{t('price')}</th>
+                        <th>{t('stock')}</th>
                         <th></th>
                     </tr>
                     </thead>
@@ -92,12 +104,14 @@ const CategoryProductsPage = () => {
                                         style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 5 }}
                                     />
                                 ) : (
-                                    <span>Немає зображення</span>
+                                    <span>{t('no_image')}</span>
                                 )}
                             </td>
                             <td>{product.name}</td>
                             <td>{product.description}</td>
-                            <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(product.price)}</td>
+                            <td>{new Intl.NumberFormat('uk-UA', {
+                                style: 'currency', currency: 'UAH'
+                            }).format(product.price)}</td>
                             <td>{product.stock}</td>
                             <td>
                                 <button
@@ -105,7 +119,7 @@ const CategoryProductsPage = () => {
                                     disabled={addingProductId === product.id}
                                     onClick={() => addToCart(product)}
                                 >
-                                    {addingProductId === product.id ? 'Додаємо...' : 'Додати в корзину'}
+                                    {addingProductId === product.id ? t('adding') : t('add_to_cart')}
                                 </button>
                             </td>
                         </tr>
