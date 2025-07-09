@@ -29,7 +29,7 @@ const Navbar = () => {
                 <Link className="nav-link" to="/profile">{t('profile')}</Link>
                 <Link className="nav-link" to="/allCategories">{t('categories')}</Link>
                 <Link to="/cart" className="btn btn-outline-primary">
-                    🛒 {t('cart' )})
+                    🛒 {t('cart')}
                 </Link>
             </div>
 

@@ -78,6 +78,7 @@ const resources = {
             "remove": "remove",
             "quantity": "quantity",
             "total": "total",
+            checkout:"checkout",
 
 
 
@@ -158,6 +159,7 @@ const resources = {
             "remove": "видалити",
             "quantity": "кількість",
             "total": "всього",
+            checkout:"оформити замовлення",
 
 
 
