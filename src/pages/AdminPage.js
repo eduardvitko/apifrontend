@@ -5,27 +5,17 @@ const AdminPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('jwt'); // виправлено з 'token'
         if (!token) {
             navigate('/admin/login');
         }
     }, [navigate]);
 
-    const goToAllUsers = () => {
-        navigate('/admin/users');
-    };
-
-    const goToAllCategories = () => {
-        navigate('/admin/categories');
-    };
-
-    const goToAllProducts = () => {
-        navigate('/admin/products');
-    };
-
-    const goToImages = () => {
-        navigate('/admin/images');
-    };
+    const goToAllUsers = () => navigate('/admin/users');
+    const goToAllCategories = () => navigate('/admin/categories');
+    const goToAllProducts = () => navigate('/admin/products');
+    const goToImages = () => navigate('/admin/images');
+    const goToAddressOrders = () => navigate('/admin/orders/{id}/pay'); // нова функція
 
     return (
         <div className="container mt-5">
@@ -36,24 +26,27 @@ const AdminPage = () => {
                 <div className="card-body">
                     <p>Вітаємо, Адміністраторе!</p>
 
-                    <button onClick={goToAllUsers} className="btn btn-primary mb-2">
-                        Переглянути всіх користувачів
-                    </button>
-                    <br />
+                    <div className="d-grid gap-3">
+                        <button onClick={goToAllUsers} className="btn btn-primary">
+                            Переглянути всіх користувачів
+                        </button>
 
-                    <button onClick={goToAllCategories} className="btn btn-secondary mb-2">
-                        Категорії
-                    </button>
-                    <br />
+                        <button onClick={goToAllCategories} className="btn btn-secondary">
+                            Категорії
+                        </button>
 
-                    <button onClick={goToAllProducts} className="btn btn-success mb-2">
-                        Всі товари
-                    </button>
-                    <br/>
+                        <button onClick={goToAllProducts} className="btn btn-success">
+                            Всі товари
+                        </button>
 
-                    <button onClick={goToImages} className="btn btn-warning mt-2">
-                        Зображення
-                    </button>
+                        <button onClick={goToImages} className="btn btn-warning">
+                            Зображення
+                        </button>
+
+                        <button onClick={goToAddressOrders} className="btn btn-info">
+                            Адреси та замовлення
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
