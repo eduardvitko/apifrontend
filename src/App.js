@@ -21,7 +21,8 @@ import PaymentPage from './pages/PaymentPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import ImagePage from './pages/ImagePage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
-import AddressOrdersPage from "./pages/AddressPaymentPage";
+import AddressOrdersPage from "./pages/AddressOrdersPage";
+import AdminOrdersPage from "./pages/AddressOrdersPage";
 
 
 import Navbar from './pages/Navbar'; // компонент навігації з пошуком
@@ -70,7 +71,8 @@ function App() {
                     <Route path="/payments" element={<PaymentPage />} />
                     <Route path="/products/search" element={<SearchResultsPage />} />
                     <Route path="/products/:id" element={<ProductDetailsPage />} />
-                    <Route path="/admin/orders/user/{userId}/with-address" element={<AddressOrdersPage />} />
+                    <Route path="/admin/orders/user/:userId/with-address" element={<AddressOrdersPage />} />
+                    <Route path="/admin/orders" element={<AdminOrdersPage />} />
                 </Routes>
             </div>
         </Router>
