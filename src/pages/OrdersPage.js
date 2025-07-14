@@ -72,6 +72,7 @@ const OrdersPage = () => {
     // Функції сортування
     const sortOrders = (orders) => {
         const ordersCopy = [...orders];
+
         if (sortBy === 'date') {
             ordersCopy.sort((a, b) => {
                 const dateA = new Date(a.orderDate);
@@ -79,16 +80,24 @@ const OrdersPage = () => {
                 return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
             });
         } else if (sortBy === 'status') {
-            // Приклад порядку статусів
-            const statusOrder = ['PENDING', 'PAID', 'COMPLETED', 'CANCELLED'];
+            // Оновлений і повний список статусів (згідно твоєї бази)
+            const statusOrder = ['PENDING', 'PROCESSING', 'PAID', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
+
             ordersCopy.sort((a, b) => {
                 const indexA = statusOrder.indexOf(a.status);
                 const indexB = statusOrder.indexOf(b.status);
-                return sortOrder === 'asc' ? indexA - indexB : indexB - indexA;
+
+                // fallback: якщо статус не знайдено, вважаємо його найнижчим пріоритетом
+                const safeIndexA = indexA === -1 ? statusOrder.length : indexA;
+                const safeIndexB = indexB === -1 ? statusOrder.length : indexB;
+
+                return sortOrder === 'asc' ? safeIndexA - safeIndexB : safeIndexB - safeIndexA;
             });
         }
+
         return ordersCopy;
     };
+
 
     const sortedOrders = sortOrders(orders);
 
