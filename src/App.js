@@ -22,7 +22,7 @@ import SearchResultsPage from './pages/SearchResultsPage';
 import ImagePage from './pages/ImagePage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import AddressOrdersPage from "./pages/AddressOrdersPage";
-import AdminOrdersPage from "./pages/AddressOrdersPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
 
 
 import Navbar from './pages/Navbar'; // компонент навігації з пошуком

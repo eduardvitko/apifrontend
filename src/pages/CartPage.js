@@ -26,6 +26,19 @@ const CartPage = () => {
             Authorization: `Bearer ${getToken()}`
         }
     });
+    const updateQuantity = (productId, newQuantity) => {
+        const updatedCart = cartItems.map(item =>
+            item.productId === productId
+                ? { ...item, quantity: Math.max(1, parseInt(newQuantity) || 1) }
+                : item
+        );
+
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        setCartItems(updatedCart);
+
+        const newTotal = updatedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        setTotal(newTotal);
+    };
 
     useEffect(() => {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -45,6 +58,8 @@ const CartPage = () => {
         const newTotal = updatedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
         setTotal(newTotal);
     };
+    const getProductName = (item) =>
+        item.nameUa || item.name || item.productName || 'Назва відсутня';
 
     const changeLanguage = (lng) => i18n.changeLanguage(lng);
 
@@ -155,21 +170,34 @@ const CartPage = () => {
                         {/* ВИПРАВЛЕННЯ ВІДОБРАЖЕННЯ НАЗВИ */}
                         {/* Цей рядок спробує знайти назву в item.nameUa, потім item.name, потім item.productName */}
                         {/* Виберіть те, що відповідає вашим даним, або залиште так для гнучкості */}
-                        <td>{item.nameUa || item.name || item.productName || 'Назва відсутня'}</td>
+                        <td>{getProductName(item)}</td>
                         <td>{formatPrice(item.price)}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatPrice(item.price * item.quantity)}</td>
+                        <td>
+                            <input
+                                type="number"
+                                className="form-control form-control-sm"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => updateQuantity(item.productId, e.target.value)}
+                                style={{ maxWidth: '80px' }}
+                            />
+                        </td>
+                        <td>{formatPrice((item.price || 0) * (item.quantity || 1))}</td>
+
                         <td>
                             <button className="btn btn-danger btn-sm" onClick={() => removeItem(item.productId)}>
                                 {t('remove')}
                             </button>
                         </td>
+
+
                     </tr>
                 ))}
                 </tbody>
             </table>
 
-            <h5 className="mt-3">{t('total')}: {formatPrice(total)}</h5>
+            <h5 className="mt-3">{t('total')}: {formatPrice(total || 0)}</h5>
+
 
             {/* ВИПРАВЛЕННЯ РОЗТАШУВАННЯ КНОПОК: знизу зліва */}
             <div className="d-flex justify-content-start mt-3">

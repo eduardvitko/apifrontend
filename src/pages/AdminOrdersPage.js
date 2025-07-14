@@ -22,6 +22,24 @@ const AdminOrdersPage = () => {
             Authorization: `Bearer ${getToken()}`
         }
     });
+    const formatDate = (isoString) => {
+        try {
+            const date = new Date(isoString);
+            return isNaN(date.getTime())
+                ? '-'
+                : date.toLocaleString('uk-UA', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                });
+        } catch (e) {
+            return '-';
+        }
+    };
+
 
     const loadData = async () => {
         setLoading(true);
@@ -94,12 +112,14 @@ const AdminOrdersPage = () => {
                 <p className="text-muted">Замовлення відсутні.</p>
             ) : (
                 <Row xs={1} md={2} lg={2} className="g-4">
-                    {orders.map((order) => (
+                    {orders.map(order => (
                         <Col key={order.id}>
                             <Card className="shadow-sm h-100">
                                 <Card.Body>
                                     <Card.Title>Замовлення №{order.id}</Card.Title>
-                                    <p><strong>Дата:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleString() : '-'}</p>
+                                    <p><strong>Дата:</strong> {formatDate(order.orderDate)}</p>
+
+
                                     <p><strong>Сума:</strong> {order.total?.toFixed(2)} ₴</p>
                                     <p><strong>Статус:</strong> {order.status}</p>
 
