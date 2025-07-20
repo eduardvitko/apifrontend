@@ -227,7 +227,7 @@ const formatPrice = (price) => {
     const language = localStorage.getItem('i18nextLng') || 'ua';
     const options = {
         style: 'currency',
-        currency: language === 'en' ? 'USD' : 'UAH',
+        currency: language === 'en' ? 'UAH' : 'UAH',
     };
     return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'uk-UA', options).format(price);
 };
