@@ -7,6 +7,9 @@ const API = axios.create({
     // Замінюємо статичну адресу на змінну середовища
     baseURL: process.env.REACT_APP_API_URL
 });
+export const registerUser = (email, password) => {
+    return apiClient.post('/api/auth/register', { email, password });
+};
 export const loginUser = (data) => API.post('/auth/login', data);
-export const registerUser = (data) => API.post('/auth/register', data);
+// export const registerUser = (data) => API.post('/auth/register', data);
 export const fetchCategories = () => API.get('/categories/all');
