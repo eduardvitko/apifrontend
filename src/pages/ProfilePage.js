@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+// 1. Імпортуємо наш централізований екземпляр 'api'
+import api from '../api'; // Переконайтеся, що шлях до файлу api.js правильний
 
 const ProfilePage = () => {
     const { t } = useTranslation();
@@ -12,31 +13,40 @@ const ProfilePage = () => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const token = localStorage.getItem('jwt');
+            // Перевіряємо токен, використовуючи ключ 'token'
+            const token = localStorage.getItem('token');
             if (!token) {
                 setError(t('profile_unauthorized'));
                 setLoading(false);
+                navigate('/login'); // Якщо токену немає, одразу перенаправляємо на логін
                 return;
             }
 
             try {
-                const res = await axios.get('http://localhost:8080/api/user/me', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        Accept: 'application/json'
-                    },
-                });
-
+                // 2. Використовуємо 'api' для запиту.
+                // URL вказано від кореня, а заголовок Authorization додасться автоматично!
+                const res = await api.get('/api/user/me');
                 setProfile(res.data);
             } catch (err) {
                 setError(t('profile_load_error'));
+                // Якщо токен недійсний (помилка 401/403), також можна перенаправити на логін
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchProfile();
-    }, [t]);
+    }, [t, navigate]); // Додаємо navigate до масиву залежностей
+
+    const handleLogout = () => {
+        // При виході з системи переконуємося, що видаляємо ключ 'token'
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
 
     if (loading) {
         return (
@@ -49,6 +59,10 @@ const ProfilePage = () => {
 
     if (error) {
         return <div className="alert alert-danger mt-4 text-center">{error}</div>;
+    }
+
+    if (!profile) {
+        return null; // або повернути інший компонент-заглушку
     }
 
     const isAdmin = profile.roles?.includes('ADMIN');
@@ -87,10 +101,7 @@ const ProfilePage = () => {
                             </button>
                         )}
 
-                        <button className="btn btn-outline-danger" onClick={() => {
-                            localStorage.removeItem('jwt');
-                            navigate('/login');
-                        }}>
+                        <button className="btn btn-outline-danger" onClick={handleLogout}>
                             🚪 {t('profile_logout')}
                         </button>
                     </div>
