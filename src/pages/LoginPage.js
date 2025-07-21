@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+// 1. Імпортуємо наш налаштований екземпляр 'api'
+import api, { loginUser } from '../api'; // Переконайтеся, що шлях до файлу api.js правильний
 
 const LoginPage = () => {
     const { t } = useTranslation();
@@ -17,19 +18,20 @@ const LoginPage = () => {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/login', {
+            // 2. Використовуємо функцію loginUser з нашого api.js
+            const response = await loginUser({
                 username,
                 password
             });
 
+            // 3. Зберігаємо токен. Важливо, щоб ключ був однаковий всюди.
+            //    Наш api.js шукає 'token', тому використовуємо 'token'.
             const { token } = response.data;
-            localStorage.setItem('jwt', token);
+            localStorage.setItem('token', token);
 
-            const profileResponse = await axios.get('http://localhost:8080/api/user/me', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            // 4. Отримуємо профіль користувача. Заголовок авторизації додасться автоматично!
+            //    Наш перехоплювач в api.js зробить це за нас.
+            const profileResponse = await api.get('/api/user/me'); // <-- Зверніть увагу на шлях
 
             const roles = profileResponse.data.roles;
 
@@ -38,8 +40,11 @@ const LoginPage = () => {
             } else {
                 navigate('/profile');
             }
+
         } catch (err) {
-            setError(t('login_error'));
+            // Виводимо більш детальну помилку, якщо вона є
+            const errorMessage = err.response?.data?.message || t('login_error');
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
