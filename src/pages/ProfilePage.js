@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// 1. Імпортуємо наш централізований екземпляр 'api'
-import api from '../api'; // Переконайтеся, що шлях до файлу api.js правильний
+// Імпортуємо нашу нову, чисту функцію з api.js
+import { fetchUserProfile } from '../api'; // Переконайтеся, що відносний шлях правильний
 
 const ProfilePage = () => {
     const { t } = useTranslation();
@@ -12,24 +12,21 @@ const ProfilePage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchProfile = async () => {
-            // Перевіряємо токен, використовуючи ключ 'token'
+        const loadProfile = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
-                setError(t('profile_unauthorized'));
-                setLoading(false);
-                navigate('/login'); // Якщо токену немає, одразу перенаправляємо на логін
+                // Якщо токену немає, не робимо запит, а одразу перенаправляємо
+                navigate('/login');
                 return;
             }
 
             try {
-                // 2. Використовуємо 'api' для запиту.
-                // URL вказано від кореня, а заголовок Authorization додасться автоматично!
-                const res = await api.get('/api/user/me');
-                setProfile(res.data);
+                // Використовуємо нашу нову, чисту функцію з api.js
+                const response = await fetchUserProfile();
+                setProfile(response.data);
             } catch (err) {
                 setError(t('profile_load_error'));
-                // Якщо токен недійсний (помилка 401/403), також можна перенаправити на логін
+                // Якщо токен недійсний (помилка 401/403), видаляємо його і перенаправляємо на логін
                 if (err.response?.status === 401 || err.response?.status === 403) {
                     localStorage.removeItem('token');
                     navigate('/login');
@@ -39,11 +36,11 @@ const ProfilePage = () => {
             }
         };
 
-        fetchProfile();
+        loadProfile();
     }, [t, navigate]); // Додаємо navigate до масиву залежностей
 
     const handleLogout = () => {
-        // При виході з системи переконуємося, що видаляємо ключ 'token'
+        // При виході з системи видаляємо токен і перенаправляємо
         localStorage.removeItem('token');
         navigate('/login');
     };
@@ -61,8 +58,9 @@ const ProfilePage = () => {
         return <div className="alert alert-danger mt-4 text-center">{error}</div>;
     }
 
+    // Якщо профіль ще не завантажився, нічого не відображаємо
     if (!profile) {
-        return null; // або повернути інший компонент-заглушку
+        return null;
     }
 
     const isAdmin = profile.roles?.includes('ADMIN');
