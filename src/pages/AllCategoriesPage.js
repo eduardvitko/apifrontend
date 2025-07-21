@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback } from 'react'; // Додаємо useCallback
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import CategoryNames from './CategoryNames';
+// 1. Імпортуємо нашу централізовану функцію з api.js
+import { fetchCategories } from '../api';
 
+import CategoryNames from './CategoryNames';
 
 const AllCategoriesPage = () => {
     const { t, i18n } = useTranslation();
@@ -12,26 +13,32 @@ const AllCategoriesPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
-    const token = localStorage.getItem('jwt');
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
-    const fetchCategories = async () => {
+    // 2. Створюємо функцію для завантаження даних.
+    //    useCallback потрібен, щоб функція не створювалася заново при кожному рендері,
+    //    це оптимізація і вимога для хука useEffect.
+    const loadCategories = useCallback(async () => {
+        setLoading(true);
         try {
-            const response = await axios.get('http://localhost:8080/api/categories/all', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            // 3. Використовуємо нашу чисту функцію.
+            //    Токен авторизації додасться автоматично!
+            const response = await fetchCategories();
             setCategories(response.data);
         } catch (e) {
             setError(t('categories_load_error'));
+            // Якщо сервер повернув помилку авторизації, перенаправляємо на логін
+            if (e.response?.status === 401 || e.response?.status === 403) {
+                navigate('/login');
+            }
         } finally {
             setLoading(false);
         }
-    };
+    }, [t, navigate]); // Залежності для useCallback
+
+    // 4. Викликаємо функцію завантаження даних при першому рендері компонента
+    useEffect(() => {
+        loadCategories();
+    }, [loadCategories]); // Залежність для useEffect
 
     if (loading) return <p>{t('loading')}</p>;
     if (error) return <p className="text-danger">{error}</p>;
