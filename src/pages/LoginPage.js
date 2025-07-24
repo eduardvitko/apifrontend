@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// 1. Імпортуємо наш налаштований екземпляр 'api'
-import api, { loginUser } from '../api'; // Переконайтеся, що шлях до файлу api.js правильний
+// Імпортуємо наші централізовані функції для API-запитів
+import { loginUser, fetchUserProfile } from '../api'; // Переконайтеся, що відносний шлях правильний
 
 const LoginPage = () => {
     const { t } = useTranslation();
@@ -18,32 +18,34 @@ const LoginPage = () => {
         setError('');
 
         try {
-            // 2. Використовуємо функцію loginUser з нашого api.js
-            const response = await loginUser({
-                username,
-                password
-            });
+            // 1. Надсилаємо запит на логін
+            const loginResponse = await loginUser({ username, password });
 
-            // 3. Зберігаємо токен. Важливо, щоб ключ був однаковий всюди.
-            //    Наш api.js шукає 'token', тому використовуємо 'token'.
-            const { token } = response.data;
-            localStorage.setItem('token', token);
+            // Перевіряємо, чи є токен у відповіді
+            if (loginResponse.data && loginResponse.data.token) {
+                const { token } = loginResponse.data;
 
-            // 4. Отримуємо профіль користувача. Заголовок авторизації додасться автоматично!
-            //    Наш перехоплювач в api.js зробить це за нас.
-            const profileResponse = await api.get('/api/user/me'); // <-- Зверніть увагу на шлях
+                // 2. Зберігаємо токен у localStorage. Це активує 'перехоплювач' в api.js для наступних запитів.
+                localStorage.setItem('token', token);
 
-            const roles = profileResponse.data.roles;
+                // 3. Отримуємо профіль користувача, щоб визначити його роль
+                const profileResponse = await fetchUserProfile();
+                const roles = profileResponse.data.roles;
 
-            if (roles.includes('ADMIN')) {
-                navigate('/admin');
+                // 4. Перенаправляємо користувача в залежності від ролі
+                if (roles && roles.includes('ADMIN')) {
+                    navigate('/admin');
+                } else {
+                    navigate('/profile');
+                }
             } else {
-                navigate('/profile');
+                // Якщо відповідь успішна, але не містить токену
+                setError(t('login_error_no_token'));
             }
 
         } catch (err) {
-            // Виводимо більш детальну помилку, якщо вона є
-            const errorMessage = err.response?.data?.message || t('login_error');
+            // Обробляємо помилки, що могли виникнути
+            const errorMessage = err.response?.data?.message || err.response?.data || t('login_error');
             setError(errorMessage);
         } finally {
             setLoading(false);
