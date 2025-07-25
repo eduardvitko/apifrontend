@@ -33,7 +33,7 @@ import AdminOrdersPage from "./pages/AdminOrdersPage";
 // Імпортуємо компоненти
 import Navbar from './pages/Navbar';
 import AdminRoute from './AdminRoute'; // <-- НАШ НОВИЙ ЗАХИЩЕНИЙ МАРШРУТ
-import ProtectedRoute from './components/ProtectedRoute'; // <-- ЗАХИЩЕНИЙ МАРШРУТ ДЛЯ ЗВИЧАЙНИХ КОРИСТУВАЧІВ (БОНУС)
+
 
 const HomePage = () => {
     const { t } = useTranslation();
