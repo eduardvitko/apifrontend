@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// Імпортуємо наші централізовані функції для API-запитів
-import { loginUser, fetchUserProfile } from '../api'; // Переконайтеся, що відносний шлях правильний
+// Імпортуємо тільки потрібну нам функцію
+import { loginUser } from '../api'; // Переконайтеся, що відносний шлях правильний
 
 const LoginPage = () => {
     const { t } = useTranslation();
@@ -25,19 +25,14 @@ const LoginPage = () => {
             if (loginResponse.data && loginResponse.data.token) {
                 const { token } = loginResponse.data;
 
-                // 2. Зберігаємо токен у localStorage. Це активує 'перехоплювач' в api.js для наступних запитів.
+                // 2. Зберігаємо токен у localStorage
                 localStorage.setItem('token', token);
 
-                // 3. Отримуємо профіль користувача, щоб визначити його роль
-                const profileResponse = await fetchUserProfile();
-                const roles = profileResponse.data.roles;
+                // 3. *** ГОЛОВНА ЗМІНА ***
+                //    Одразу перенаправляємо на сторінку профілю,
+                //    не роблячи додаткового запиту для перевірки ролі.
+                navigate('/profile');
 
-                // 4. Перенаправляємо користувача в залежності від ролі
-                if (roles && roles.includes('ADMIN')) {
-                    navigate('/admin');
-                } else {
-                    navigate('/profile');
-                }
             } else {
                 // Якщо відповідь успішна, але не містить токену
                 setError(t('login_error_no_token'));
