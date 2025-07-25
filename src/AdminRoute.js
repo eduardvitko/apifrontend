@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { fetchUserProfile } from '../api'; // Імпортуємо нашу централізовану функцію
+import { fetchUserProfile } from './api'; // Імпортуємо нашу централізовану функцію
 
 const AdminRoute = () => {
     const [isAdmin, setIsAdmin] = useState(false);
