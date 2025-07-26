@@ -34,9 +34,14 @@ export const fetchCategories = () => api.get('/api/categories/all');
 // --- Товари ---
 // export const fetchProducts = () => api.get('/api/products/all'); // приклад для майбутнього
 
-// Додайте тут решту ваших функцій, завжди використовуючи екземпляр 'api'
-// і вказуючи повний шлях, що починається з "/api/..."
 
+export const fetchAdminCategories = () => api.get('/api/admin/all/categories');
+
+export const createCategory = (data) => api.post('/api/admin/create/category', data);
+
+export const updateCategory = (id, data) => api.put(`/api/admin/update/category/${id}`, data);
+
+export const deleteCategory = (id) => api.delete(`/api/admin/delete/category/${id}`);
 
 // Експортуємо сам екземпляр 'api' на випадок, якщо він знадобиться для нестандартних запитів.
 export default api;
