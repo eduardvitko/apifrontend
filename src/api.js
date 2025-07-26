@@ -32,7 +32,22 @@ export const fetchUserProfile = () => api.get('/api/user/me');
 export const fetchCategories = () => api.get('/api/categories/all');
 
 // --- Товари ---
-// export const fetchProducts = () => api.get('/api/products/all'); // приклад для майбутнього
+
+// Функція для створення товару
+export const createProduct = (productData) => api.post('/api/admin/create/product', productData);
+
+
+export const fetchAdminProducts = () => api.get('/api/admin/all/products');
+export const updateProduct = (id, productData) => api.put(`/api/admin/update/product/${id}`, productData);
+export const deleteProduct = (id) => api.delete(`/api/admin/delete/product/${id}`);
+
+
+
+
+
+
+
+
 
 
 export const fetchAdminCategories = () => api.get('/api/admin/all/categories');

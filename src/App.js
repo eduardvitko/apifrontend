@@ -16,14 +16,13 @@ import OrderDetailsPage from './pages/OrderDetailsPage';
 import PaymentPage from './pages/PaymentPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
-import AllProductsPagePublic from './pages/AllProductsPage'; // Перейменував для уникнення конфлікту
 
 // Імпортуємо адмінські сторінки
 import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AllUsersPage from './pages/AllUsersPage';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
-import AllProductsPageAdmin from './pages/AllProductsPage'; // Перейменував для уникнення конфлікту
+import AllProductsPage from './pages/AllProductsPage'; // Перейменував для уникнення конфлікту
 import CreateProductPage from './pages/CreateProductPage';
 import UpdateProductPage from './pages/UpdateProductPage';
 import ImagePage from './pages/ImagePage';
@@ -56,7 +55,7 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/admin/login" element={<AdminLoginPage />} /> {/* Залишаємо публічним */}
-                    <Route path="/allCategories" element={<AllCategoriesPage />} />
+                    <Route path="/all/сategories" element={<AllCategoriesPage />} />
                     <Route path="/categories/:id/products" element={<CategoryProductsPage />} />
                     <Route path="/products/search" element={<SearchResultsPage />} />
                     <Route path="/products/:id" element={<ProductDetailsPage />} />
