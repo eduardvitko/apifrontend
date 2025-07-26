@@ -59,7 +59,7 @@ function App() {
                     <Route path="/categories/:id/products" element={<CategoryProductsPage />} />
                     <Route path="/products/search" element={<SearchResultsPage />} />
                     <Route path="/products/:id" element={<ProductDetailsPage />} />
-                    <Route path="/products/all" element={<AllProductsPagePublic />} />
+                    <Route path="/products/all" element={<AllProductsPage />} />
 
                     {/* --- МАРШРУТИ ДЛЯ АВТОРИЗОВАНИХ КОРИСТУВАЧІВ (БОНУС) --- */}
                     {/* Ви можете створити ProtectedRoute за аналогією з AdminRoute, але з перевіркою тільки наявності токену */}
@@ -78,7 +78,7 @@ function App() {
                         <Route path="/admin" element={<AdminPage />} />
                         <Route path="/admin/users" element={<AllUsersPage />} />
                         <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-                        <Route path="/admin/products" element={<AllProductsPageAdmin />} />
+                        <Route path="/admin/products" element={<AllProductsPage />} />
                         <Route path="/admin/products/create" element={<CreateProductPage />} />
                         <Route path="/admin/products/update/:id" element={<UpdateProductPage />} />
                         <Route path="/admin/images" element={<ImagePage />} />
