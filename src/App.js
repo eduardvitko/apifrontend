@@ -78,7 +78,7 @@ function App() {
                         <Route path="/admin" element={<AdminPage />} />
                         <Route path="/admin/users" element={<AllUsersPage />} />
                         <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-                        <Route path="/admin/products" element={<AllProductsPage />} />
+                        <Route path="/admin/products/all" element={<AllProductsPage />} />
                         <Route path="/admin/products/create" element={<CreateProductPage />} />
                         <Route path="/admin/products/update/:id" element={<UpdateProductPage />} />
                         <Route path="/admin/images" element={<ImagePage />} />
