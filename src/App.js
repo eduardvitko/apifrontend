@@ -55,7 +55,7 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/admin/login" element={<AdminLoginPage />} /> {/* Залишаємо публічним */}
-                    <Route path="/all/сategories" element={<AllCategoriesPage />} />
+                    <Route path="/сategories/all" element={<AllCategoriesPage />} />
                     <Route path="/categories/:id/products" element={<CategoryProductsPage />} />
                     <Route path="/products/search" element={<SearchResultsPage />} />
                     <Route path="/products/:id" element={<ProductDetailsPage />} />
@@ -77,7 +77,7 @@ function App() {
                     <Route element={<AdminRoute />}>
                         <Route path="/admin" element={<AdminPage />} />
                         <Route path="/admin/users" element={<AllUsersPage />} />
-                        <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+                        <Route path="/admin/categories/" element={<AdminCategoriesPage />} />
                         <Route path="/admin/products/all" element={<AllProductsPage />} />
                         <Route path="/admin/products/create" element={<CreateProductPage />} />
                         <Route path="/admin/products/update/:id" element={<UpdateProductPage />} />
