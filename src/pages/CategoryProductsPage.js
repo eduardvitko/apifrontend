@@ -1,46 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+// 1. ІМПОРТУЄМО нашу централізовану функцію.
+//    Ми перейменовуємо її при імпорті, щоб уникнути конфлікту імен.
+import { fetchProductsByCategory as fetchProductsByCategoryAPI } from '../api';
+
 const CategoryProductsPage = () => {
-    const { id } = useParams();
+    const { id } = useParams(); // Отримуємо ID категорії з URL
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const token = localStorage.getItem('jwt');
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [addingProductId, setAddingProductId] = useState(null);
 
-    useEffect(() => {
-        if (!token) {
-            setError(t('not_authorized'));
-            setLoading(false);
-            return;
-        }
-        fetchProductsByCategory();
-    }, [id, i18n.language]);
+    // 2. ВИДАЛЯЄМО ручне отримання токена.
+    //    Для публічних запитів він не потрібен. Для захищених - його додасть перехоплювач.
+    // const token = localStorage.getItem('jwt'); // <-- ЦЕЙ РЯДОК БІЛЬШЕ НЕ ПОТРІБЕН
 
-    const fetchProductsByCategory = async () => {
+    // 3. ВИКОРИСТОВУЄМО useCallback для оптимізації та правильної роботи useEffect
+    const fetchProducts = useCallback(async () => {
+        if (!id) return; // Не робити запит, якщо ID ще немає
+
         setLoading(true);
+        setError('');
         try {
-            const response = await axios.get(`http://localhost:8080/api/products/by-category/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            // 4. ВИКОРИСТОВУЄМО нашу нову, централізовану функцію з api.js
+            const response = await fetchProductsByCategoryAPI(id);
             setProducts(response.data);
-            setError('');
         } catch (e) {
+            console.error("Помилка завантаження товарів:", e);
             setError(t('fetch_error'));
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, t]); // Залежності: id і функція перекладу t
 
+    // 5. useEffect тепер залежить від мемоізованої функції fetchProducts
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts, i18n.language]); // Додаємо i18n.language для перезавантаження при зміні мови
+
+    // Логіка додавання в кошик - без змін, вона правильна
     const addToCart = (product) => {
         setAddingProductId(product.id);
-
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const existingIndex = cart.findIndex(item => item.productId === product.id);
 
@@ -56,18 +61,25 @@ const CategoryProductsPage = () => {
         }
 
         localStorage.setItem('cart', JSON.stringify(cart));
-        setAddingProductId(null);
-        navigate('/cart');
+
+        // Можна додати невелику затримку для кращого UX
+        setTimeout(() => {
+            setAddingProductId(null);
+            navigate('/cart');
+        }, 300);
     };
 
+    // Функція зміни мови - без змін
     const changeLanguage = (lng) => i18n.changeLanguage(lng);
 
-    if (loading) return <p>{t('loading')}</p>;
-    if (error) return <p className="text-danger">{error}</p>;
+    // --- JSX-розмітка без змін ---
+    // Вона написана добре і не потребує правок
+
+    if (loading) return <p className="text-center mt-5">{t('loading')}</p>;
+    if (error) return <p className="text-danger text-center mt-5">{error}</p>;
 
     return (
         <div className="container mt-5">
-            {/* Language Switch */}
             <div className="d-flex justify-content-end mb-3">
                 <button onClick={() => changeLanguage('ua')} className="btn btn-outline-primary btn-sm me-2">UA</button>
                 <button onClick={() => changeLanguage('en')} className="btn btn-outline-secondary btn-sm">EN</button>
@@ -82,8 +94,8 @@ const CategoryProductsPage = () => {
             {products.length === 0 ? (
                 <p>{t('no_products')}</p>
             ) : (
-                <table className="table table-bordered">
-                    <thead>
+                <table className="table table-bordered table-hover">
+                    <thead className="table-dark">
                     <tr>
                         <th>{t('image')}</th>
                         <th>{t('name')}</th>
@@ -96,7 +108,7 @@ const CategoryProductsPage = () => {
                     <tbody>
                     {products.map(product => (
                         <tr key={product.id}>
-                            <td style={{ width: 100 }}>
+                            <td style={{ width: 100, textAlign: 'center' }}>
                                 {product.images && product.images.length > 0 ? (
                                     <img
                                         src={product.images[0].url}
@@ -104,16 +116,16 @@ const CategoryProductsPage = () => {
                                         style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 5 }}
                                     />
                                 ) : (
-                                    <span>{t('no_image')}</span>
+                                    <span className="text-muted">{t('no_image')}</span>
                                 )}
                             </td>
-                            <td>{product.name}</td>
-                            <td>{product.description}</td>
-                            <td>{new Intl.NumberFormat('uk-UA', {
+                            <td style={{ verticalAlign: 'middle' }}>{product.name}</td>
+                            <td style={{ verticalAlign: 'middle' }}>{product.description}</td>
+                            <td style={{ verticalAlign: 'middle' }}>{new Intl.NumberFormat('uk-UA', {
                                 style: 'currency', currency: 'UAH'
                             }).format(product.price)}</td>
-                            <td>{product.stock}</td>
-                            <td>
+                            <td style={{ verticalAlign: 'middle' }}>{product.stock}</td>
+                            <td style={{ verticalAlign: 'middle' }}>
                                 <button
                                     className="btn btn-primary"
                                     disabled={addingProductId === product.id}

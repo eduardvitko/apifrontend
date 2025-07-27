@@ -59,5 +59,9 @@ export const updateCategory = (id, data) => api.put(`/api/admin/update/category/
 
 export const deleteCategory = (id) => api.delete(`/api/admin/delete/category/${id}`);
 
+
+
+export const fetchProductsByCategory = (categoryId) => api.get(`/api/products/by-category/${categoryId}`);
+
 // Експортуємо сам екземпляр 'api' на випадок, якщо він знадобиться для нестандартних запитів.
 export default api;
