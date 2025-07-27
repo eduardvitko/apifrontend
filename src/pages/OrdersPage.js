@@ -55,7 +55,7 @@ const OrdersPage = () => {
             ordersCopy.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
             if (sortOrder === 'asc') ordersCopy.reverse();
         } else if (sortBy === 'status') {
-            const statusOrder = ['PENDING', 'PROCESSING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']; // Видалено COMPLETED
+            const statusOrder = ['PENDING', 'PROCESSING','SHIPPED', 'DELIVERED', 'CANCELLED','PAID',]; // Видалено COMPLETED
             ordersCopy.sort((a, b) => {
                 const indexA = statusOrder.indexOf(a.status);
                 const indexB = statusOrder.indexOf(b.status);
