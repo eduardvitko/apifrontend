@@ -97,31 +97,31 @@ const AllProductsPage = () => {
                 </Button>
             </div>
 
-            <Card className="mb-4 shadow-sm">
-                <Card.Header as="h5">Створити товар у конкретній категорії</Card.Header>
-                <Card.Body>
-                    <Form.Group controlId="categorySelect">
-                        <Form.Label>Спочатку виберіть категорію:</Form.Label>
-                        <Form.Select
-                            value={selectedCategoryId}
-                            onChange={(e) => setSelectedCategoryId(e.target.value)}
-                        >
-                            <option value="">-- Оберіть категорію --</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </Form.Select>
-                    </Form.Group>
-                    <Button
-                        variant="primary"
-                        className="mt-3"
-                        onClick={() => handleCreate(selectedCategoryId)}
-                        disabled={!selectedCategoryId}
-                    >
-                        Перейти до створення
-                    </Button>
-                </Card.Body>
-            </Card>
+            {/*<Card className="mb-4 shadow-sm">*/}
+            {/*    <Card.Header as="h5">Створити товар у конкретній категорії</Card.Header>*/}
+            {/*    <Card.Body>*/}
+            {/*        <Form.Group controlId="categorySelect">*/}
+            {/*            <Form.Label>Спочатку виберіть категорію:</Form.Label>*/}
+            {/*            <Form.Select*/}
+            {/*                value={selectedCategoryId}*/}
+            {/*                onChange={(e) => setSelectedCategoryId(e.target.value)}*/}
+            {/*            >*/}
+            {/*                <option value="">-- Оберіть категорію --</option>*/}
+            {/*                {categories.map(cat => (*/}
+            {/*                    <option key={cat.id} value={cat.id}>{cat.name}</option>*/}
+            {/*                ))}*/}
+            {/*            </Form.Select>*/}
+            {/*        </Form.Group>*/}
+            {/*        <Button*/}
+            {/*            variant="primary"*/}
+            {/*            className="mt-3"*/}
+            {/*            onClick={() => handleCreate(selectedCategoryId)}*/}
+            {/*            disabled={!selectedCategoryId}*/}
+            {/*        >*/}
+            {/*            Перейти до створення*/}
+            {/*        </Button>*/}
+            {/*    </Card.Body>*/}
+            {/*</Card>*/}
 
             <Button variant="outline-secondary" size="sm" onClick={() => navigate('/admin')} className="mb-3">
                 ← Назад до панелі адміністратора
