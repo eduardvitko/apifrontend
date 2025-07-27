@@ -31,6 +31,7 @@ export const fetchUserProfile = () => api.get('/api/user/me');
 // --- Категорії ---
 export const fetchCategories = () => api.get('/api/categories/all');
 
+
 // --- Товари ---
 
 // Функція для створення товару
