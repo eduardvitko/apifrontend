@@ -67,6 +67,20 @@ export const fetchProductsByCategory = (categoryId) => api.get(`/api/products/by
 
 // --- Замовлення (Orders) ---
 export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
+// --- Замовлення (Orders) ---
+
+// Отримання замовлень за ID користувача
+export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
+
+// Дії з замовленнями
+export const cancelOrder = (orderId) => api.put(`/api/orders/${orderId}/cancel`);
+export const deleteOrder = (orderId) => api.delete(`/api/orders/delete/${orderId}`);
+
+// Створення замовлення (вже є)
+export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
+
+// Отримання профілю користувача (вже є)
+// export const fetchUserProfile = () => api.get('/api/user/me');
 
 // Експортуємо сам екземпляр 'api' на випадок, якщо він знадобиться для нестандартних запитів.
 export default api;
