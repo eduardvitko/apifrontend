@@ -55,7 +55,7 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/admin/login" element={<AdminLoginPage />} /> {/* Залишаємо публічним */}
-                    <Route path="/сategories/all" element={<AllCategoriesPage />} />
+                    <Route path="/categories/all" element={<AllCategoriesPage />} />
                     <Route path="/categories/:id/products" element={<CategoryProductsPage />} />
                     <Route path="/products/search" element={<SearchResultsPage />} />
                     <Route path="/products/:id" element={<ProductDetailsPage />} />
