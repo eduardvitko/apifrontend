@@ -76,6 +76,10 @@ export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userI
 // Дії з замовленнями
 export const cancelOrder = (orderId) => api.put(`/api/orders/${orderId}/cancel`);
 export const deleteOrder = (orderId) => api.delete(`/api/orders/delete/${orderId}`);
+// --- Замовлення (Orders) ---
+export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
+
+
 
 
 
