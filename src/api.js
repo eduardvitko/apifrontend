@@ -63,5 +63,10 @@ export const deleteCategory = (id) => api.delete(`/api/admin/delete/category/${i
 
 export const fetchProductsByCategory = (categoryId) => api.get(`/api/products/by-category/${categoryId}`);
 
+
+
+// --- Замовлення (Orders) ---
+export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
+
 // Експортуємо сам екземпляр 'api' на випадок, якщо він знадобиться для нестандартних запитів.
 export default api;

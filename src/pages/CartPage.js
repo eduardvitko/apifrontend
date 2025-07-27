@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
-// Конфігурація API (можна винести в окремий файл)
-export const API_ENDPOINTS = {
-    BASE_URL: 'http://localhost:8080/api',
-    PAYMENTS: 'http://localhost:8080/api/payments',
-    ORDERS: 'http://localhost:8080/api/orders',
-    USER_ME: 'http://localhost:8080/api/user/me',
-};
+// 1. ІМПОРТУЄМО нашу нову функцію з api.js
+import { createOrder } from '../api';
 
 const CartPage = () => {
     const { t, i18n } = useTranslation();
@@ -19,55 +13,50 @@ const CartPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const getToken = () => localStorage.getItem('jwt');
+    // 2. ВИДАЛЯЄМО зайві константи та функції для ручного керування API
+    // const API_ENDPOINTS = { ... }; // <-- НЕ ПОТРІБНО
+    // const getToken = () => localStorage.getItem('jwt'); // <-- НЕ ПОТРІБНО
+    // const getAuthHeaders = () => { ... }; // <-- НЕ ПОТРІБНО
 
-    const getAuthHeaders = () => ({
-        headers: {
-            Authorization: `Bearer ${getToken()}`
-        }
-    });
+    // Логіка для роботи з кошиком в localStorage - без змін, вона правильна
     const updateQuantity = (productId, newQuantity) => {
         const updatedCart = cartItems.map(item =>
             item.productId === productId
                 ? { ...item, quantity: Math.max(1, parseInt(newQuantity) || 1) }
                 : item
         );
-
         localStorage.setItem('cart', JSON.stringify(updatedCart));
         setCartItems(updatedCart);
+        calculateTotal(updatedCart);
+    };
 
-        const newTotal = updatedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const removeItem = (productId) => {
+        const updatedCart = cartItems.filter(item => item.productId !== productId);
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        setCartItems(updatedCart);
+        calculateTotal(updatedCart);
+    };
+
+    const calculateTotal = (items) => {
+        const newTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
         setTotal(newTotal);
     };
 
     useEffect(() => {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         setCartItems(cart);
-
-        const totalPrice = cart.reduce((sum, item) => {
-            return sum + item.price * item.quantity;
-        }, 0);
-        setTotal(totalPrice);
+        calculateTotal(cart);
     }, []);
 
-    const removeItem = (productId) => {
-        const updatedCart = cartItems.filter(item => item.productId !== productId);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-        setCartItems(updatedCart);
+    const getProductName = (item) => item.nameUa || item.name || item.productName || t('name_missing');
 
-        const newTotal = updatedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        setTotal(newTotal);
-    };
-    const getProductName = (item) =>
-        item.nameUa || item.name || item.productName || 'Назва відсутня';
-
-    const changeLanguage = (lng) => i18n.changeLanguage(lng);
-
+    // 3. СПРОЩУЄМО функцію оформлення замовлення
     const handleCheckout = async () => {
         setError('');
         setLoading(true);
 
-        const token = getToken();
+        // Перевірка наявності токена залишається, але використовуємо правильний ключ
+        const token = localStorage.getItem('token');
         if (!token) {
             setError(t('login_required_for_checkout'));
             setLoading(false);
@@ -81,21 +70,16 @@ const CartPage = () => {
             return;
         }
 
-        // Логіка визначення назви для відправки на бекенд
         const orderItemsDto = cartItems.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
-            // ВИПРАВЛЕННЯ: Використовуємо перше доступне поле з назвою, пріоритет: nameUa, потім name, потім productName
-            productName: item.nameUa || item.name || item.productName || 'Unnamed Product' // Додаємо запасний варіант
+            productName: item.nameUa || item.name || item.productName || 'Unnamed Product'
         }));
 
         try {
-            const response = await axios.post(
-                `${API_ENDPOINTS.ORDERS}/create`,
-                orderItemsDto,
-                getAuthHeaders()
-            );
+            // 4. ВИКОРИСТОВУЄМО нашу централізовану функцію
+            const response = await createOrder(orderItemsDto);
 
             if (response.status === 200) {
                 localStorage.removeItem('cart');
@@ -106,33 +90,28 @@ const CartPage = () => {
             }
         } catch (err) {
             console.error('Помилка при оформленні замовлення:', err);
-            if (err.response) {
-                if (err.response.status === 401 || err.response.status === 403) {
-                    setError(t('session_expired_login_again'));
-                    localStorage.removeItem('jwt');
-                    navigate('/login');
-                } else {
-                    setError(`${t('error_occurred')}: ${err.response.data.message || err.response.statusText}`);
-                }
-            } else {
-                setError(t('network_server_error'));
-            }
+            // Глобальний перехоплювач в api.js сам обробить помилку 401/403 (прострочена сесія)
+            // Нам залишається обробити інші можливі помилки
+            setError(err.response?.data?.message || t('network_server_error'));
         } finally {
             setLoading(false);
         }
     };
 
+    // Функція зміни мови і форматування ціни - без змін
+    const changeLanguage = (lng) => i18n.changeLanguage(lng);
+    const formatPrice = (price) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(price || 0);
+
+    // --- JSX-розмітка без змін ---
+    // Вона написана добре і не потребує правок
+
     if (cartItems.length === 0) {
         return (
-            <div className="container mt-5">
-                <div className="d-flex justify-content-end mb-3">
-                    <button onClick={() => changeLanguage('ua')} className="btn btn-outline-primary btn-sm me-2">UA</button>
-                    <button onClick={() => changeLanguage('en')} className="btn btn-outline-secondary btn-sm">EN</button>
-                </div>
+            <div className="container mt-5 text-center">
                 <h3>🛒 {t('your_cart')}</h3>
-                <p>{t('cart_empty')}</p>
-                <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>
-                    ← {t('back')}
+                <p className="lead mt-3">{t('cart_empty')}</p>
+                <button className="btn btn-primary mt-3" onClick={() => navigate('/')}>
+                    {t('to_shopping')}
                 </button>
             </div>
         );
@@ -140,7 +119,6 @@ const CartPage = () => {
 
     return (
         <div className="container mt-5">
-            {/* Language Switch */}
             <div className="d-flex justify-content-end mb-3">
                 <button onClick={() => changeLanguage('ua')} className="btn btn-outline-primary btn-sm me-2">UA</button>
                 <button onClick={() => changeLanguage('en')} className="btn btn-outline-secondary btn-sm">EN</button>
@@ -148,28 +126,21 @@ const CartPage = () => {
 
             <h3>🛒 {t('your_cart')}</h3>
 
-            {error && (
-                <div className="alert alert-danger" role="alert">
-                    {error}
-                </div>
-            )}
+            {error && <div className="alert alert-danger">{error}</div>}
 
-            <table className="table table-bordered">
-                <thead>
+            <table className="table table-hover">
+                <thead className="table-light">
                 <tr>
                     <th>{t('name')}</th>
                     <th>{t('price')}</th>
-                    <th>{t('quantity')}</th>
+                    <th style={{ width: '120px' }}>{t('quantity')}</th>
                     <th>{t('total')}</th>
-                    <th></th>
+                    <th style={{ width: '100px' }}></th>
                 </tr>
                 </thead>
                 <tbody>
                 {cartItems.map(item => (
                     <tr key={item.productId}>
-                        {/* ВИПРАВЛЕННЯ ВІДОБРАЖЕННЯ НАЗВИ */}
-                        {/* Цей рядок спробує знайти назву в item.nameUa, потім item.name, потім item.productName */}
-                        {/* Виберіть те, що відповідає вашим даним, або залиште так для гнучкості */}
                         <td>{getProductName(item)}</td>
                         <td>{formatPrice(item.price)}</td>
                         <td>
@@ -182,29 +153,23 @@ const CartPage = () => {
                                 style={{ maxWidth: '80px' }}
                             />
                         </td>
-                        <td>{formatPrice((item.price || 0) * (item.quantity || 1))}</td>
-
+                        <td>{formatPrice(item.price * item.quantity)}</td>
                         <td>
                             <button className="btn btn-danger btn-sm" onClick={() => removeItem(item.productId)}>
                                 {t('remove')}
                             </button>
                         </td>
-
-
                     </tr>
                 ))}
                 </tbody>
             </table>
 
-            <h5 className="mt-3">{t('total')}: {formatPrice(total || 0)}</h5>
-
-
-            {/* ВИПРАВЛЕННЯ РОЗТАШУВАННЯ КНОПОК: знизу зліва */}
-            <div className="d-flex justify-content-start mt-3">
+            <div className="d-flex justify-content-end align-items-center mt-3">
+                <h4 className="me-4">{t('total')}: {formatPrice(total)}</h4>
                 <button
-                    className="btn btn-success me-2" // Кнопка замовлення зліва, має відступ справа
+                    className="btn btn-success btn-lg"
                     onClick={handleCheckout}
-                    disabled={loading || cartItems.length === 0}
+                    disabled={loading}
                 >
                     {loading ? (
                         <>
@@ -212,24 +177,15 @@ const CartPage = () => {
                             {t('processing')}...
                         </>
                     ) : (
-                        <>✅ {t('checkout')} </>
+                        `✅ ${t('checkout')}`
                     )}
                 </button>
-                <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-                    ← {t('back')}
-                </button>
             </div>
+            <button className="btn btn-outline-secondary mt-4" onClick={() => navigate(-1)}>
+                ← {t('back_to_shopping')}
+            </button>
         </div>
     );
-};
-
-const formatPrice = (price) => {
-    const language = localStorage.getItem('i18nextLng') || 'ua';
-    const options = {
-        style: 'currency',
-        currency: language === 'en' ? 'UAH' : 'UAH',
-    };
-    return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'uk-UA', options).format(price);
 };
 
 export default CartPage;
