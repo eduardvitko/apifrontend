@@ -44,7 +44,7 @@ const AdminPage = () => {
     // Функції для навігації (залишаються без змін, вони написані добре)
     const goToAllUsers = () => navigate('/admin/users');
     const goToAllCategories = () => navigate('/admin/categories');
-    const goToAllProducts = () => navigate('/admin/products');
+    const goToAllProducts = () => navigate('/admin/products/all');
     const goToImages = () => navigate('/admin/images');
     const goToAddressOrders = () => navigate(`/admin/orders`);
 
