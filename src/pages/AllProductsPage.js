@@ -1,52 +1,53 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button, Spinner, Alert, Table, Image } from 'react-bootstrap'; // Використовуємо компоненти Bootstrap
 
-// 1. ІМПОРТУЄМО наші централізовані функції з api.js
-import { fetchAdminProducts, deleteProduct } from '../api'; // У нас вже є ці функції в api.js!
+// 1. ІМПОРТУЄМО наші централізовані адмінські функції
+import { fetchAdminProducts, deleteProduct } from '../api';
 
 const AllProductsPage = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
     const navigate = useNavigate();
 
-    // 2. ФУНКЦІЯ для отримання товарів тепер використовує fetchAdminProducts
+    // 2. ФУНКЦІЯ для отримання товарів використовує fetchAdminProducts
     const fetchProducts = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
-            // Тепер запит автоматично отримає правильний baseURL і токен
+            // Запит автоматично отримає правильний baseURL і токен
             const response = await fetchAdminProducts();
             setProducts(response.data);
         } catch (e) {
             console.error("Помилка при завантаженні товарів:", e);
+            // Глобальний перехоплювач в api.js обробить помилки авторизації
             setError(e.response?.data?.message || 'Не вдалося завантажити товари.');
-            // Наш глобальний перехоплювач в api.js сам обробить помилку 401/403 і зробить редірект
         } finally {
             setLoading(false);
         }
-    }, []); // Залежності більше не потрібні, бо функція не залежить від токена напряму
+    }, []);
 
     useEffect(() => {
         fetchProducts();
     }, [fetchProducts]);
 
-    // 3. ФУНКЦІЯ видалення тепер використовує deleteProduct
+    // 3. ФУНКЦІЯ видалення використовує deleteProduct
     const handleDelete = useCallback(async (id) => {
         if (!window.confirm('Ви дійсно хочете видалити цей товар?')) {
             return;
         }
         try {
             await deleteProduct(id);
-            fetchProducts(); // Оновлюємо список
+            // Після успішного видалення оновлюємо список товарів
+            fetchProducts();
         } catch (e) {
             console.error("Помилка при видаленні товару:", e);
             setError(e.response?.data?.message || 'Помилка при видаленні товару.');
         }
-    }, [fetchProducts]); // Залежність тільки від fetchProducts
+    }, [fetchProducts]);
 
-    // Решта функцій навігації залишаються без змін
+    // Функції навігації залишаються без змін
     const handleEdit = useCallback((id) => {
         navigate(`/admin/products/update/${id}`);
     }, [navigate]);
@@ -55,46 +56,68 @@ const AllProductsPage = () => {
         navigate('/admin/products/create');
     }, [navigate]);
 
-    // JSX-розмітка залишається без змін, вона написана дуже добре
+    // --- JSX-розмітка з покращеннями ---
+
+    if (loading) {
+        return (
+            <div className="text-center mt-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-2">Завантаження товарів...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="container mt-5">
+                <Alert variant="danger">{error}</Alert>
+                <Button variant="secondary" onClick={() => navigate('/admin')}>
+                    ← Назад до панелі адміністратора
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-5">
-            <button className="btn btn-secondary mb-3" onClick={() => navigate('/admin')}>
-                ← Назад до панелі адміністратора
-            </button>
-            <h2>Керування товарами</h2>
-            <button className="btn btn-success mb-3" onClick={handleCreate}>
-                Створити товар
-            </button>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2>Керування товарами</h2>
+                <Button variant="success" onClick={handleCreate}>
+                    + Створити товар
+                </Button>
+            </div>
 
-            {loading ? (
-                <p className="text-center">Завантаження товарів...</p>
-            ) : error ? (
-                <p className="text-danger text-center">{error}</p>
-            ) : products.length === 0 ? (
-                <p className="text-center">Товари не знайдені.</p>
+            <Button variant="outline-secondary" size="sm" onClick={() => navigate('/admin')} className="mb-3">
+                ← Назад до панелі адміністратора
+            </Button>
+
+            {products.length === 0 ? (
+                <div className="text-center p-5 border rounded bg-light">
+                    <p className="lead">Товари не знайдені.</p>
+                    <p>Схоже, у базі даних ще немає жодного товару. Створіть перший!</p>
+                </div>
             ) : (
-                <table className="table table-striped table-bordered">
-                    {/* ... ваша таблиця без змін ... */}
-                    <thead>
+                <Table striped bordered hover responsive="sm" className="align-middle">
+                    <thead className="table-dark">
                     <tr>
                         <th style={{ width: '100px' }}>Зображення</th>
                         <th>Назва</th>
                         <th>Ціна</th>
                         <th>Залишок</th>
                         <th>Категорія</th>
-                        <th style={{ width: '250px' }}>Дії</th>
+                        <th style={{ width: '200px', textAlign: 'center' }}>Дії</th>
                     </tr>
                     </thead>
                     <tbody>
                     {products.map(prod => (
                         <tr key={prod.id}>
-                            <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
+                            <td className="text-center">
                                 {prod.images && prod.images.length > 0 && prod.images[0].url ? (
-                                    <img
+                                    <Image
                                         src={prod.images[0].url}
                                         alt={prod.images[0].altText || prod.name}
-                                        style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '5px' }}
+                                        rounded
+                                        style={{ width: '70px', height: '70px', objectFit: 'cover' }}
                                         onError={(e) => {
                                             e.target.onerror = null;
                                             e.target.src = 'https://via.placeholder.com/70x70?text=Error';
@@ -102,25 +125,25 @@ const AllProductsPage = () => {
                                         }}
                                     />
                                 ) : (
-                                    <span style={{ fontSize: '0.8em', color: '#666' }}>Немає зображення</span>
+                                    <span className="text-muted small">Немає фото</span>
                                 )}
                             </td>
-                            <td style={{ verticalAlign: 'middle' }}>{prod.name}</td>
-                            <td style={{ verticalAlign: 'middle' }}>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(prod.price)}</td>
-                            <td style={{ verticalAlign: 'middle' }}>{prod.stock}</td>
-                            <td style={{ verticalAlign: 'middle' }}>{prod.categoryName}</td>
-                            <td style={{ verticalAlign: 'middle' }}>
-                                <button className="btn btn-primary btn-sm me-2" onClick={() => handleEdit(prod.id)}>
+                            <td>{prod.name}</td>
+                            <td>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(prod.price)}</td>
+                            <td>{prod.stock}</td>
+                            <td>{prod.categoryName}</td>
+                            <td className="text-center">
+                                <Button variant="primary" size="sm" className="me-2" onClick={() => handleEdit(prod.id)}>
                                     Редагувати
-                                </button>
-                                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(prod.id)}>
+                                </Button>
+                                <Button variant="danger" size="sm" onClick={() => handleDelete(prod.id)}>
                                     Видалити
-                                </button>
+                                </Button>
                             </td>
                         </tr>
                     ))}
                     </tbody>
-                </table>
+                </Table>
             )}
         </div>
     );
