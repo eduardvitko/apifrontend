@@ -1,37 +1,27 @@
-import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
-export const API_ENDPOINTS = {
-    BASE_URL: 'http://localhost:8080/api',
-    PAYMENTS: 'http://localhost:8080/api/payments',
-    ORDERS: 'http://localhost:8080/api/orders',
-    USER_ME: 'http://localhost:8080/api/user/me',
-    ADDRESSES: 'http://localhost:8080/api/addresses',
-};
+// 1. IMPORT all necessary centralized functions from api.js
+import {
+    fetchMyOrders,
+    fetchUserAddresses,
+    createAddress,
+    fetchMyPayments,
+    createPayment,
+    updatePayment,
+    deletePayment,
+    markOrderAsPaid,
+    updateOrderAddress
+} from '../api';
 
 const PaymentPage = () => {
-    const [allPayments, setAllPayments] = useState([]);
-    const [userOrders, setUserOrders] = useState([]);
+    const [payments, setPayments] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [addresses, setAddresses] = useState([]);
     const [selectedPayment, setSelectedPayment] = useState(null);
-    const [formData, setFormData] = useState({
-        orderId: '',
-        paymentDate: '',
-        amount: '',
-        method: '',
-        addressId: '',
-    });
-    const [addressFormData, setAddressFormData] = useState({
-        country: '',
-        city: '',
-        street: '',
-        houseNumber: '',
-        apartmentNumber: '',
-        postalCode: '',
-        region: ''
-    });
+    const [paymentFormData, setPaymentFormData] = useState({ orderId: '', addressId: '', method: '', amount: '', paymentDate: '' });
+    const [addressFormData, setAddressFormData] = useState({ country: '', city: '', street: '', houseNumber: '', apartmentNumber: '', postalCode: '', region: '' });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
@@ -40,626 +30,208 @@ const PaymentPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const getToken = () => localStorage.getItem('jwt');
-    const getAuthHeaders = () => ({
-        headers: {
-            Authorization: `Bearer ${getToken()}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    const updateOrderAddress = async (orderId, addressId) => {
-        try {
-            await axios.put(
-                `${API_ENDPOINTS.ORDERS}/${orderId}/address/${addressId}`,
-                {}, // без тіла
-                getAuthHeaders()
-            );
-            setMessage(`Адресу замовлення #${orderId} оновлено`);
-        } catch (err) {
-            console.error('Помилка оновлення адреси замовлення:', err);
-            setError('Не вдалося оновити адресу замовлення');
-        }
-    };
-
-
-    // Форматування адреси за id
-    const formatAddressById = (id) => {
-        if (!id) return '-';
-        const addr = addresses.find(a => a.id === id);
-        if (!addr) return 'Адреса не знайдена';
-        return `${addr.country}, ${addr.city}, ${addr.street}, ${addr.houseNumber}${addr.apartmentNumber ? `, кв. ${addr.apartmentNumber}` : ''}`;
-    };
-
-    const loadAllData = async () => {
+    // 2. A SINGLE, EFFICIENT function to load all necessary data
+    const loadAllData = useCallback(async () => {
         setLoading(true);
         setError('');
-        setMessage('');
-        const token = getToken();
-
-        if (!token) {
-            setError('Будь ласка, увійдіть, щоб керувати платежами. Токен JWT відсутній.');
-            setLoading(false);
-            return;
-        }
-
         try {
-            const userRes = await axios.get(API_ENDPOINTS.USER_ME, getAuthHeaders());
-            const userId = userRes.data.id;
-
-            const paymentsRes = await axios.get(API_ENDPOINTS.PAYMENTS, getAuthHeaders());
-            setAllPayments(paymentsRes.data);
-
-            const ordersRes = await axios.get(`${API_ENDPOINTS.ORDERS}/user/${userId}`, getAuthHeaders());
-            setUserOrders(ordersRes.data);
-
-            // Виправлено: отримання адрес - GET, а не POST
-            const addressesRes = await axios.get(`${API_ENDPOINTS.ADDRESSES}/user/${userId}`, getAuthHeaders());
+            const [paymentsRes, ordersRes, addressesRes] = await Promise.all([
+                fetchMyPayments(),
+                fetchMyOrders(),
+                fetchUserAddresses()
+            ]);
+            setPayments(paymentsRes.data);
+            setOrders(ordersRes.data);
             setAddresses(addressesRes.data);
-
         } catch (err) {
-            console.error('Помилка завантаження даних:', err);
-            if (err.response) {
-                if (err.response.status === 401 || err.response.status === 403) {
-                    setError('Неавторизований доступ. Переконайтеся, що ви увійшли. Можливо, сесія закінчилася.');
-                } else {
-                    setError(`Помилка: ${err.response.status} - ${err.response.data.message || err.response.statusText}`);
-                }
-            } else {
-                setError('Помилка мережі або сервера. Будь ласка, спробуйте пізніше.');
-            }
+            console.error('Error loading data:', err);
+            setError(err.response?.data?.message || 'Failed to load page data.');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setError('Please log in to manage payments.');
+            setLoading(false);
+            navigate('/login');
+            return;
+        }
         loadAllData();
+    }, [loadAllData, navigate]);
 
-        if (location.state && location.state.orderId) {
+    // Auto-fill form if coming from the orders page
+    useEffect(() => {
+        if (location.state?.orderId) {
             const { orderId, amount } = location.state;
-            setFormData(prev => ({
+            setPaymentFormData(prev => ({
                 ...prev,
                 orderId: orderId.toString(),
                 amount: amount ? amount.toFixed(2).toString() : '',
-                paymentDate: ''
             }));
-            if (formRef.current) {
-                formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            formRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
     }, [location.state]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+
+    // 3. UPDATED event handlers using centralized API functions
+
+    const handleAddressSubmit = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        setError('');
+        try {
+            const response = await createAddress(addressFormData);
+            setAddresses(prev => [...prev, response.data]);
+            setMessage('Address successfully added! ✅');
+            setAddressFormData({ country: '', city: '', street: '', houseNumber: '', apartmentNumber: '', postalCode: '', region: '' });
+        } catch (err) {
+            setError('Failed to add address.');
+        }
     };
 
-    const handleCreatePayment = async (e) => {
+    const handlePaymentFormSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setMessage('');
+        setError('');
 
-        const token = getToken();
-        if (!token) {
-            setError('Токен JWT відсутній. Будь ласка, увійдіть.');
-            return;
-        }
+        const dataToSend = {
+            orderId: parseInt(paymentFormData.orderId),
+            addressId: parseInt(paymentFormData.addressId),
+            method: paymentFormData.method.toUpperCase(),
+            amount: parseFloat(paymentFormData.amount),
+            paymentDate: paymentFormData.paymentDate || null,
+        };
 
         try {
-            const dataToSend = {
-                ...formData,
-                orderId: parseInt(formData.orderId, 10),
-                amount: parseFloat(formData.amount),
-                method: formData.method.toUpperCase(),
-                paymentDate: formData.paymentDate ? formData.paymentDate : null,
-                addressId: formData.addressId ? parseInt(formData.addressId, 10) : null,
-            };
-
-            const res = await axios.post(API_ENDPOINTS.PAYMENTS, dataToSend, getAuthHeaders());
-            setAllPayments(prev => [...prev, res.data]);
-            setMessage('Платіж успішно створено! ✅');
-
-            try {
-                // ОНОВЛЕННЯ СТАТУСУ
-                await axios.put(
-                    `${API_ENDPOINTS.ORDERS}/${dataToSend.orderId}/pay`,
-                    {},
-                    getAuthHeaders()
-                );
-
-                // ОНОВЛЕННЯ АДРЕСИ ЗАМОВЛЕННЯ
-                if (dataToSend.addressId) {
-                    await updateOrderAddress(dataToSend.orderId, dataToSend.addressId);
-                }
-
-                loadAllData();
-            } catch (orderUpdateErr) {
-                console.error('Помилка оновлення статусу чи адреси:', orderUpdateErr);
-                setError(prev => prev + ' (Не вдалося оновити статус або адресу замовлення).');
+            if (selectedPayment) { // Update existing payment
+                await updatePayment(selectedPayment.id, { ...dataToSend, id: selectedPayment.id });
+                setMessage('Payment successfully updated! ✅');
+            } else { // Create new payment
+                await createPayment(dataToSend);
+                setMessage('Payment successfully created! ✅');
+                // After creating a payment, update the order status and address
+                await markOrderAsPaid(dataToSend.orderId);
+                await updateOrderAddress(dataToSend.orderId, dataToSend.addressId);
             }
 
-
-            setFormData({ orderId: '', paymentDate: '', amount: '', method: '', addressId: '' });
-
+            // Clear form and reload all data to be up-to-date
+            setSelectedPayment(null);
+            setPaymentFormData({ orderId: '', addressId: '', method: '', amount: '', paymentDate: '' });
+            await loadAllData();
         } catch (err) {
-            console.error('Помилка створення платежу:', err);
-            if (err.response) {
-                setError(`Помилка створення: ${err.response.status} - ${err.response.data.message || err.response.statusText}`);
-            } else {
-                setError('Помилка мережі або сервера при створенні платежу.');
-            }
+            setError(err.response?.data?.message || 'Error saving payment.');
+        }
+    };
+
+    const handleDeletePayment = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this payment?')) return;
+        try {
+            await deletePayment(id);
+            setMessage('Payment successfully deleted! 🗑️');
+            setPayments(prev => prev.filter(p => p.id !== id));
+        } catch (err) {
+            setError('Failed to delete payment.');
         }
     };
 
     const handleEditClick = (payment) => {
         setSelectedPayment(payment);
-        const formattedDate = payment.paymentDate ? new Date(payment.paymentDate).toISOString().substring(0, 16) : '';
-        setFormData({
+        setPaymentFormData({
             orderId: payment.orderId.toString(),
-            paymentDate: formattedDate,
+            addressId: payment.addressId?.toString() || '',
+            method: payment.method || '',
             amount: payment.amount.toString(),
-            method: payment.method,
-            addressId: payment.addressId ? payment.addressId.toString() : '',
+            paymentDate: payment.paymentDate ? new Date(payment.paymentDate).toISOString().slice(0, 16) : '',
         });
-        if (formRef.current) {
-            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        formRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const handleUpdatePayment = async (e) => {
-        e.preventDefault();
-        setError('');
-        setMessage('');
-
-        if (!selectedPayment) return;
-
-        const token = getToken();
-        if (!token) {
-            setError('Токен JWT відсутній. Будь ласка, увійдіть.');
-            return;
-        }
-
-        try {
-            const dataToSend = {
-                ...formData,
-                id: selectedPayment.id,
-                orderId: parseInt(formData.orderId, 10),
-                amount: parseFloat(formData.amount),
-                method: formData.method.toUpperCase(),
-                paymentDate: formData.paymentDate ? formData.paymentDate : null,
-                addressId: formData.addressId ? parseInt(formData.addressId, 10) : null,
-            };
-
-            const res = await axios.put(`${API_ENDPOINTS.PAYMENTS}/${selectedPayment.id}`, dataToSend, getAuthHeaders());
-            setAllPayments(prev => prev.map(p => (p.id === selectedPayment.id ? res.data : p)));
-            setMessage('Платіж успішно оновлено! ✅');
-            setSelectedPayment(null);
-            setFormData({ orderId: '', paymentDate: '', amount: '', method: '', addressId: '' });
-            loadAllData();
-        } catch (err) {
-            console.error('Помилка оновлення платежу:', err);
-            if (err.response) {
-                setError(`Помилка оновлення: ${err.response.status} - ${err.response.data.message || err.response.statusText}`);
-            } else {
-                setError('Помилка мережі або сервера при оновленні платежу.');
-            }
-        }
-    };
-
-    const handleDeletePayment = async (id) => {
-        setError('');
-        setMessage('');
-
-        const token = getToken();
-        if (!token) {
-            setError('Токен JWT відсутній. Будь ласка, увійдіть.');
-            return;
-        }
-
-        if (window.confirm('Ви впевнені, що хочете видалити цей платіж? Цю дію може змінити статус замовлення.')) {
-            try {
-                await axios.delete(`${API_ENDPOINTS.PAYMENTS}/${id}`, getAuthHeaders());
-                setAllPayments(prev => prev.filter(p => p.id !== id));
-                setMessage('Платіж успішно видалено! 🗑️');
-                loadAllData();
-            } catch (err) {
-                console.error('Помилка видалення платежу:', err);
-                if (err.response) {
-                    setError(`Помилка видалення: ${err.response.status} - ${err.response.data.message || err.response.statusText}`);
-                } else {
-                    setError('Помилка мережі або сервера при видаленні платежу.');
-                }
-            }
-        }
-    };
-
-    const handlePayForOrderClick = (orderId, orderTotal) => {
+    const handlePayForOrderClick = (order) => {
         setSelectedPayment(null);
-        setFormData({
-            orderId: orderId.toString(),
-            paymentDate: '',
-            amount: orderTotal ? orderTotal.toFixed(2).toString() : '',
-            method: '',
+        setPaymentFormData({
+            orderId: order.id.toString(),
+            amount: order.total ? order.total.toFixed(2).toString() : '',
             addressId: '',
+            method: '',
+            paymentDate: ''
         });
-        if (formRef.current) {
-            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        formRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Фільтруємо платежі користувача
-    const currentUserOrderIds = new Set(userOrders.map(order => order.id));
-    const unpaidOrders = userOrders.filter(order => order.status === 'PENDING');
-    const userPayments = allPayments.filter(payment =>
-        currentUserOrderIds.has(payment.orderId)
-    );
+    // --- JSX Display Logic ---
+    // This part is well-written and doesn't need many changes
+
+    const unpaidOrders = orders.filter(order => order.status === 'PENDING');
 
     if (loading) {
         return (
-            <Container className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-                <div className="text-center">
-                    <Spinner animation="border" role="status" className="mb-3" />
-                    <p className="text-muted">Завантаження даних...</p>
-                </div>
+            <Container className="text-center mt-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-2">Loading data...</p>
             </Container>
         );
     }
 
     return (
         <Container fluid className="py-5 bg-light">
-            <Container className="bg-white p-5 rounded-3 shadow border">
-                <h1 className="text-center mb-5 text-primary fw-bold">Управління платежами</h1>
-                <Button variant="secondary" onClick={() => navigate(-1)} className="mb-4">
-                    &#8592; Назад
-                </Button>
+            <Container className="bg-white p-4 p-md-5 rounded-3 shadow-sm">
+                <h1 className="text-center mb-5 text-primary fw-bold">Payment Management</h1>
+                <Button variant="outline-secondary" onClick={() => navigate(-1)} className="mb-4">← Back</Button>
 
-                {error && (
-                    <Alert variant="danger" className="mb-4">
-                        <strong>Помилка!</strong> {error}
-                    </Alert>
-                )}
-                {message && (
-                    <Alert variant="success" className="mb-4">
-                        <strong>Успіх!</strong> {message}
-                    </Alert>
-                )}
+                {error && <Alert variant="danger">{error}</Alert>}
+                {message && <Alert variant="success">{message}</Alert>}
 
-                {/* Форма створення адреси доставки */}
-                <Card className="mb-5 p-4 border-info bg-info bg-opacity-10 shadow">
+                {/* Add New Address Form */}
+                <Card className="mb-5 shadow-sm">
+                    <Card.Header as="h5">Add New Shipping Address</Card.Header>
                     <Card.Body>
-                        <h2 className="text-center mb-4 text-info">Додати нову адресу доставки</h2>
-                        <Form
-                            onSubmit={async (e) => {
-                                e.preventDefault();
-                                setError('');
-                                setMessage('');
-                                try {
-                                    const token = getToken();
-                                    if (!token) {
-                                        setError('Токен JWT відсутній. Будь ласка, увійдіть.');
-                                        return;
-                                    }
-                                    await axios.post(`${API_ENDPOINTS.ADDRESSES}/create/address`, addressFormData, getAuthHeaders());
-
-                                    setMessage('Адресу успішно додано! ✅');
-                                    setAddressFormData({
-                                        country: '',
-                                        city: '',
-                                        street: '',
-                                        houseNumber: '',
-                                        apartmentNumber: '',
-                                        postalCode: '',
-                                        region: ''
-                                    });
-                                    loadAllData();
-                                } catch (err) {
-                                    console.error('Помилка додавання адреси:', err);
-                                    setError('Не вдалося додати адресу. Спробуйте пізніше.');
-                                }
-                            }}
-                        >
-                            <Row className="g-4">
-                                <Col md={6}>
-                                    <Form.Group controlId="country" className="mb-3">
-                                        <Form.Label>Країна</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            required
-                                            value={addressFormData.country}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, country: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group controlId="city" className="mb-3">
-                                        <Form.Label>Місто</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            required
-                                            value={addressFormData.city}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, city: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group controlId="street" className="mb-3">
-                                        <Form.Label>Вулиця</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            required
-                                            value={addressFormData.street}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, street: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={3}>
-                                    <Form.Group controlId="houseNumber" className="mb-3">
-                                        <Form.Label>Номер будинку</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            required
-                                            value={addressFormData.houseNumber}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, houseNumber: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={3}>
-                                    <Form.Group controlId="apartmentNumber" className="mb-3">
-                                        <Form.Label>Квартира (необов’язково)</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={addressFormData.apartmentNumber}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, apartmentNumber: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group controlId="postalCode" className="mb-3">
-                                        <Form.Label>Поштовий індекс</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={addressFormData.postalCode}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group controlId="region" className="mb-3">
-                                        <Form.Label>Область / Регіон</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={addressFormData.region}
-                                            onChange={(e) => setAddressFormData(prev => ({ ...prev, region: e.target.value }))}
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col xs={12} className="d-flex justify-content-center mt-3">
-                                    <Button type="submit" variant="info" className="px-5 py-3 fw-bold">
-                                        Додати адресу
-                                    </Button>
-                                </Col>
+                        <Form onSubmit={handleAddressSubmit}>
+                            <Row>
+                                <Col md={6}><Form.Control name="country" value={addressFormData.country} onChange={(e) => setAddressFormData(prev => ({...prev, country: e.target.value}))} placeholder="Country" required className="mb-2" /></Col>
+                                <Col md={6}><Form.Control name="city" value={addressFormData.city} onChange={(e) => setAddressFormData(prev => ({...prev, city: e.target.value}))} placeholder="City" required className="mb-2" /></Col>
+                                <Col md={6}><Form.Control name="street" value={addressFormData.street} onChange={(e) => setAddressFormData(prev => ({...prev, street: e.target.value}))} placeholder="Street" required className="mb-2" /></Col>
+                                <Col md={6}><Form.Control name="houseNumber" value={addressFormData.houseNumber} onChange={(e) => setAddressFormData(prev => ({...prev, houseNumber: e.target.value}))} placeholder="House Number" required className="mb-2" /></Col>
                             </Row>
+                            <Button type="submit" variant="info" className="mt-2">Add Address</Button>
                         </Form>
                     </Card.Body>
                 </Card>
 
-                {/* Форма створення / редагування платежів */}
-                <Card ref={formRef} className="mb-5 p-4 border-secondary bg-secondary bg-opacity-10 shadow">
+                {/* Create / Edit Payment Form */}
+                <Card ref={formRef} className="mb-5 shadow-sm">
+                    <Card.Header as="h5">{selectedPayment ? 'Edit Payment' : 'Create a New Payment'}</Card.Header>
                     <Card.Body>
-                        <h2 className="text-center mb-4 text-secondary">
-                            {selectedPayment ? 'Редагувати платіж' : 'Створити новий платіж'}
-                        </h2>
-                        <Form onSubmit={selectedPayment ? handleUpdatePayment : handleCreatePayment}>
-                            <Row className="g-4">
-                                <Col md={6}>
-                                    <Form.Group className="mb-3" controlId="orderId">
-                                        <Form.Label>Замовлення:</Form.Label>
-                                        <Form.Select
-                                            name="orderId"
-                                            value={formData.orderId}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="shadow-sm"
-                                        >
-                                            <option value="">Виберіть замовлення</option>
-                                            {userOrders.map(order => (
-                                                <option key={order.id} value={order.id}>
-                                                    Замовлення #{order.id}{' '}
-                                                    {order.description ? ` - ${order.description}` : ''} (Статус:{' '}
-                                                    {order.status})
-                                                </option>
-                                            ))}
-                                        </Form.Select>
-                                    </Form.Group>
-                                </Col>
-
-                                <Col md={6}>
-
-
-                                    <Form.Group className="mb-3" controlId="addressId">
-                                        <Form.Label>Адреса доставки:</Form.Label>
-                                        <Form.Select
-                                            name="addressId"
-                                            value={formData.addressId}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="shadow-sm"
-                                        >
-                                            <option value="">Оберіть адресу</option>
-                                            {addresses
-                                                // Фільтрація валідних адрес, щоб не було порожніх
-                                                .filter(addr =>
-                                                    addr.country?.trim() !== '' &&
-                                                    addr.city?.trim() !== '' &&
-                                                    addr.street?.trim() !== '' &&
-                                                    addr.houseNumber?.trim() !== ''
-                                                )
-                                                .map(addr => (
-                                                    <option key={addr.id} value={addr.id}>
-                                                        {addr.country}, {addr.city}, {addr.street}, {addr.houseNumber}
-                                                        {addr.apartmentNumber ? `, кв. ${addr.apartmentNumber}` : ''}
-                                                    </option>
-                                                ))}
-                                        </Form.Select>
-                                    </Form.Group>
-                                </Col>
-
-                                    <Col md={6}>
-                                    <Form.Group className="mb-3" controlId="paymentDate">
-                                        <Form.Label>Дата оплати:</Form.Label>
-                                        <Form.Control
-                                            type="datetime-local"
-                                            name="paymentDate"
-                                            value={formData.paymentDate}
-                                            onChange={handleInputChange}
-                                        />
-                                    </Form.Group>
-                                </Col>
-
-                                <Col md={6}>
-                                    <Form.Group className="mb-3" controlId="method">
-                                        <Form.Label>Метод оплати:</Form.Label>
-                                        <Form.Select
-                                            name="method"
-                                            value={formData.method}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="shadow-sm"
-                                        >
-                                            <option value="">Виберіть метод</option>
-                                            <option value="CREDIT_CARD">Кредитна карта</option>
-                                            <option value="PAYPAL">PayPal</option>
-                                            <option value="BANK_TRANSFER">Банківський переказ</option>
-
-                                        </Form.Select>
-                                    </Form.Group>
-                                </Col>
-
-                                <Col md={6}>
-                                    <Form.Group className="mb-3" controlId="amount">
-                                        <Form.Label>Сума:</Form.Label>
-                                        <Form.Control
-                                            type="number"
-                                            name="amount"
-                                            min="0"
-                                            step="0.01"
-                                            value={formData.amount}
-                                            onChange={handleInputChange}
-                                            required
-                                        />
-                                    </Form.Group>
-                                </Col>
-
-                                <Col xs={12} className="d-flex justify-content-center mt-3">
-                                    <Button type="submit" variant="secondary" className="px-5 py-3 fw-bold">
-                                        {selectedPayment ? 'Оновити платіж' : 'Створити платіж'}
-                                    </Button>
-                                    {selectedPayment && (
-                                        <Button
-                                            variant="outline-secondary"
-                                            className="ms-3 px-4 py-3 fw-bold"
-                                            onClick={() => {
-                                                setSelectedPayment(null);
-                                                setFormData({ orderId: '', paymentDate: '', amount: '', method: '', addressId: '' });
-                                            }}
-                                        >
-                                            Скасувати
-                                        </Button>
-                                    )}
-
-                                </Col>
-
+                        <Form onSubmit={handlePaymentFormSubmit}>
+                            <Row>
+                                <Col md={6}><Form.Select name="orderId" value={paymentFormData.orderId} onChange={(e) => setPaymentFormData(prev => ({...prev, orderId: e.target.value}))} required className="mb-3"><option value="">Select Order</option>{orders.map(o => <option key={o.id} value={o.id}>Order #{o.id} - {o.total.toFixed(2)}₴</option>)}</Form.Select></Col>
+                                <Col md={6}><Form.Select name="addressId" value={paymentFormData.addressId} onChange={(e) => setPaymentFormData(prev => ({...prev, addressId: e.target.value}))} required className="mb-3"><option value="">Select Address</option>{addresses.map(a => <option key={a.id} value={a.id}>{a.city}, {a.street}</option>)}</Form.Select></Col>
+                                <Col md={6}><Form.Select name="method" value={paymentFormData.method} onChange={(e) => setPaymentFormData(prev => ({...prev, method: e.target.value}))} required className="mb-3"><option value="">Select Method</option><option value="CREDIT_CARD">Credit Card</option><option value="PAYPAL">PayPal</option></Form.Select></Col>
+                                <Col md={6}><Form.Control name="amount" type="number" value={paymentFormData.amount} onChange={(e) => setPaymentFormData(prev => ({...prev, amount: e.target.value}))} placeholder="Amount" required className="mb-3" /></Col>
+                                <Col md={6}><Form.Control name="paymentDate" type="datetime-local" value={paymentFormData.paymentDate} onChange={(e) => setPaymentFormData(prev => ({...prev, paymentDate: e.target.value}))} className="mb-3" /></Col>
                             </Row>
+                            <Button type="submit">{selectedPayment ? 'Update Payment' : 'Create Payment'}</Button>
+                            {selectedPayment && <Button variant="secondary" className="ms-2" onClick={() => { setSelectedPayment(null); setPaymentFormData({ orderId: '', addressId: '', method: '', amount: '', paymentDate: '' }); }}>Cancel</Button>}
                         </Form>
                     </Card.Body>
                 </Card>
 
-                {/* Таблиця платежів користувача */}
-                <h3 className="text-center mb-4 text-primary">Ваші платежі</h3>
-                {userPayments.length === 0 ? (
-                    <p className="text-center text-muted">Платежі не знайдені.</p>
-                ) : (
+                {/* Unpaid Orders Table */}
+                <h3 className="mt-5">Unpaid Orders</h3>
+                {unpaidOrders.length === 0 ? <p>No unpaid orders found.</p> : (
                     <Table striped bordered hover responsive>
-                        <thead>
-                        <tr>
-                            <th>Платіж ID</th>
-                            <th>Замовлення</th>
-                            <th>Дата оплати</th>
-                            <th>Метод</th>
-                            <th>Сума</th>
-                            <th>Адреса доставки</th>
-                            <th>Дії</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {userPayments.map(payment => (
-                            <tr key={payment.id}>
-                                <td>{payment.id}</td>
-                                <td>{payment.orderId}</td>
-                                <td>{payment.paymentDate ? new Date(payment.paymentDate).toLocaleString() : '-'}</td>
-                                <td>{payment.method}</td>
-                                <td>{payment.amount.toFixed(2)}</td>
-                                <td>{formatAddressById(payment.addressId)}</td>
-                                <td>
-                                    <Button
-                                        variant="outline-primary"
-                                        size="sm"
-                                        onClick={() => handleEditClick(payment)}
-                                        className="me-2"
-                                    >
-                                        Редагувати
-                                    </Button>
-                                    <Button
-                                        variant="outline-danger"
-                                        size="sm"
-                                        onClick={() => handleDeletePayment(payment.id)}
-                                    >
-                                        Видалити
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
+                        <thead><tr><th>Order ID</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody>{unpaidOrders.map(order => <tr key={order.id}><td>{order.id}</td><td>{order.total.toFixed(2)}₴</td><td>{order.status}</td><td><Button size="sm" onClick={() => handlePayForOrderClick(order)}>Pay Now</Button></td></tr>)}</tbody>
                     </Table>
                 )}
 
-                {/* Список неоплачених замовлень */}
-                <h3 className="text-center my-4 text-primary">Неоплачені замовлення</h3>
-                {unpaidOrders.length === 0 ? (
-                    <p className="text-center text-muted">Немає неоплачених замовлень.</p>
-                ) : (
+                {/* User Payments Table */}
+                <h3 className="mt-5">Your Payments</h3>
+                {payments.length === 0 ? <p>No payments found.</p> : (
                     <Table striped bordered hover responsive>
-                        <thead>
-                        <tr>
-                            <th>Замовлення ID</th>
-                            <th>Опис</th>
-                            <th>Статус</th>
-                            <th>Загальна сума</th>
-                            <th>Оплата</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {unpaidOrders.map(order => (
-                            <tr key={order.id}>
-                                <td>{order.id}</td>
-                                <td>{order.description || '-'}</td>
-                                <td>{order.status}</td>
-                                <td>{order.totalAmount ? order.totalAmount.toFixed(2) : '-'}</td>
-                                <td>
-                                    <Button
-                                        variant="success"
-                                        size="sm"
-                                        onClick={() => handlePayForOrderClick(order.id, order.totalAmount)}
-                                    >
-                                        Оплатити
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
+                        <thead><tr><th>ID</th><th>Order ID</th><th>Amount</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody>{payments.map(p => <tr key={p.id}><td>{p.id}</td><td>{p.orderId}</td><td>{p.amount.toFixed(2)}₴</td><td>{p.method}</td><td>{p.paymentDate ? new Date(p.paymentDate).toLocaleString() : '-'}</td><td><Button size="sm" variant="primary" className="me-2" onClick={() => handleEditClick(p)}>Edit</Button><Button size="sm" variant="danger" onClick={() => handleDeletePayment(p.id)}>Delete</Button></td></tr>)}</tbody>
                     </Table>
                 )}
             </Container>

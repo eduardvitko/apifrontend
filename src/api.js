@@ -66,6 +66,11 @@ export const fetchProductsByCategory = (categoryId) => api.get(`/api/products/by
 
 
 
+// --- Orders ---
+export const fetchMyOrders = () => api.get('/api/orders/my'); // We already have this
+export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`);
+export const updateOrderAddress = (orderId, addressId) => api.put(`/api/orders/${orderId}/address/${addressId}`);
+
 // --- Замовлення (Orders) ---
 export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
 // --- Замовлення (Orders) ---
@@ -80,7 +85,15 @@ export const fetchAllOrdersAdmin = () => api.get('/api/admin/orders');
 
 
 
+// --- Addresses ---
+export const fetchUserAddresses = () => api.get('/api/addresses/my'); // Endpoint to get the current user's addresses
+export const createAddress = (addressData) => api.post('/api/addresses/create/address', addressData);
 
+// --- Payments ---
+export const fetchMyPayments = () => api.get('/api/payments/my'); // Endpoint to get the current user's payments
+export const createPayment = (paymentData) => api.post('/api/payments', paymentData);
+export const updatePayment = (paymentId, paymentData) => api.put(`/api/payments/${paymentId}`, paymentData);
+export const deletePayment = (paymentId) => api.delete(`/api/payments/${paymentId}`);
 
 
 
