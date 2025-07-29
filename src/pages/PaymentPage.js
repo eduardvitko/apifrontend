@@ -2,12 +2,13 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО ВСІ ПОТРІБНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ
+// 1. ІМПОРТУЄМО АДАПТОВАНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ
 import {
-    fetchMyOrders,
+    fetchUserProfile,
+    fetchOrdersByUserId,
     fetchUserAddresses,
     createAddress,
-    fetchMyPayments,
+    fetchMyPayments, // Ця функція може потребувати адаптації на бекенді
     createPayment,
     updatePayment,
     deletePayment,
@@ -16,6 +17,7 @@ import {
 } from '../api';
 
 const PaymentPage = () => {
+    // --- Стани компонента ---
     const [payments, setPayments] = useState([]);
     const [orders, setOrders] = useState([]);
     const [addresses, setAddresses] = useState([]);
@@ -30,16 +32,20 @@ const PaymentPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Єдина функція для завантаження всіх даних
+    // 2. ОНОВЛЕНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ ДАНИХ З ДВОМА КРОКАМИ
     const loadAllData = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
+            const userResponse = await fetchUserProfile();
+            const userId = userResponse.data.id;
+
             const [paymentsRes, ordersRes, addressesRes] = await Promise.all([
-                fetchMyPayments(),
-                fetchMyOrders(),
-                fetchUserAddresses()
+                fetchMyPayments(), // Може повернути помилку, якщо ендпоінт /my не існує
+                fetchOrdersByUserId(userId),
+                fetchUserAddresses(userId)
             ]);
+
             setPayments(paymentsRes.data);
             setOrders(ordersRes.data);
             setAddresses(addressesRes.data);
@@ -77,44 +83,41 @@ const PaymentPage = () => {
     const handlePaymentInputChange = (e) => {
         const { name, value } = e.target;
         setPaymentFormData(prev => ({ ...prev, [name]: value }));
-        if (name === 'orderId') {
+        if (name === 'orderId' && value) {
             const selectedOrder = orders.find(o => o.id.toString() === value);
             if (selectedOrder) {
-                setPaymentFormData(prev => ({ ...prev, amount: selectedOrder.total.toFixed(2).toString() }));
+                setPaymentFormData(prev => ({
+                    ...prev,
+                    orderId: value,
+                    amount: selectedOrder.total.toFixed(2).toString()
+                }));
             }
         }
     };
 
-    // Обробник змін у формі адреси
     const handleAddressInputChange = (e) => {
         const { name, value } = e.target;
         setAddressFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Обробник відправки форми адреси
     const handleAddressSubmit = async (e) => {
         e.preventDefault();
-        setMessage('');
-        setError('');
+        setMessage(''); setError('');
         try {
             const response = await createAddress(addressFormData);
             setAddresses(prev => [...prev, response.data]);
             setMessage('Адресу успішно додано! ✅');
             setAddressFormData({ country: '', city: '', street: '', houseNumber: '', apartmentNumber: '', postalCode: '', region: '' });
-        } catch (err) {
-            setError('Не вдалося додати адресу.');
-        }
+        } catch (err) { setError('Не вдалося додати адресу.'); }
     };
 
-    // Обробник відправки форми платежу
     const handlePaymentFormSubmit = async (e) => {
         e.preventDefault();
-        setMessage('');
-        setError('');
+        setMessage(''); setError('');
         const dataToSend = {
             orderId: parseInt(paymentFormData.orderId),
             addressId: parseInt(paymentFormData.addressId),
-            method: paymentFormData.method.toUpperCase(),
+            method: paymentFormData.method,
             amount: parseFloat(paymentFormData.amount),
             paymentDate: paymentFormData.paymentDate || null,
         };
@@ -213,13 +216,48 @@ const PaymentPage = () => {
                     <Card.Body>
                         <Form onSubmit={handlePaymentFormSubmit}>
                             <Row>
-                                <Col md={6}><Form.Select name="orderId" value={paymentFormData.orderId} onChange={handlePaymentInputChange} required className="mb-3"><option value="">Виберіть замовлення</option>{unpaidOrders.map(o => <option key={o.id} value={o.id}>Замовлення #{o.id} - {o.total.toFixed(2)}₴</option>)}</Form.Select></Col>
-                                <Col md={6}><Form.Select name="addressId" value={paymentFormData.addressId} onChange={handlePaymentInputChange} required className="mb-3"><option value="">Виберіть адресу</option>{addresses.map(a => <option key={a.id} value={a.id}>{a.city}, {a.street}</option>)}</Form.Select></Col>
-                                <Col md={6}><Form.Select name="method" value={paymentFormData.method} onChange={handlePaymentInputChange} required className="mb-3"><option value="">Виберіть метод</option><option value="CREDIT_CARD">Кредитна карта</option><option value="PAYPAL">PayPal</option></Form.Select></Col>
-                                <Col md={6}><Form.Control name="amount" type="number" value={paymentFormData.amount} onChange={handlePaymentInputChange} placeholder="Сума" required readOnly className="mb-3" /></Col>
-                                <Col md={6}><Form.Control name="paymentDate" type="datetime-local" value={paymentFormData.paymentDate} onChange={handlePaymentInputChange} className="mb-3" /></Col>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3" controlId="orderIdSelect">
+                                        <Form.Label>Замовлення:</Form.Label>
+                                        <Form.Select name="orderId" value={paymentFormData.orderId} onChange={handlePaymentInputChange} required>
+                                            <option value="">Виберіть неоплачене замовлення</option>
+                                            {unpaidOrders.map(o => <option key={o.id} value={o.id}>Замовлення #{o.id} - {o.total.toFixed(2)}₴</option>)}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3" controlId="addressIdSelect">
+                                        <Form.Label>Адреса доставки:</Form.Label>
+                                        <Form.Select name="addressId" value={paymentFormData.addressId} onChange={handlePaymentInputChange} required>
+                                            <option value="">Виберіть адресу</option>
+                                            {addresses.map(a => <option key={a.id} value={a.id}>{a.city}, {a.street}</option>)}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3" controlId="methodSelect">
+                                        <Form.Label>Метод оплати:</Form.Label>
+                                        <Form.Select name="method" value={paymentFormData.method} onChange={handlePaymentInputChange} required>
+                                            <option value="">Виберіть метод</option>
+                                            <option value="CREDIT_CARD">Кредитна карта</option>
+                                            <option value="PAYPAL">PayPal</option>
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3" controlId="amountInput">
+                                        <Form.Label>Сума:</Form.Label>
+                                        <Form.Control name="amount" type="number" value={paymentFormData.amount} onChange={handlePaymentInputChange} placeholder="Сума" required readOnly />
+                                    </Form.Group>
+                                </Col>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3" controlId="paymentDateInput">
+                                        <Form.Label>Дата оплати:</Form.Label>
+                                        <Form.Control name="paymentDate" type="datetime-local" value={paymentFormData.paymentDate} onChange={handlePaymentInputChange} />
+                                    </Form.Group>
+                                </Col>
                             </Row>
-                            <Button type="submit">{selectedPayment ? 'Оновити' : 'Створити'}</Button>
+                            <Button type="submit">{selectedPayment ? 'Оновити' : 'Створити платіж'}</Button>
                             {selectedPayment && <Button variant="secondary" className="ms-2" onClick={() => { setSelectedPayment(null); setPaymentFormData({ orderId: '', addressId: '', method: '', amount: '', paymentDate: '' }); }}>Скасувати</Button>}
                         </Form>
                     </Card.Body>
