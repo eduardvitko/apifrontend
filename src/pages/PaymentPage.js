@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО АДАПТОВАНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ
+// 1. ІМПОРТУЄМО АДАПТОВАНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ//
 import {
     fetchUserProfile,
     fetchOrdersByUserId,
