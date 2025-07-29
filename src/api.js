@@ -78,6 +78,9 @@ export const createOrder = (orderData) => api.post('/api/orders/create', orderDa
 export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`);
 export const updateOrderAddress = (orderId, addressId) => api.put(`/api/orders/${orderId}/address/${addressId}`);
 export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
+
+// Для адміна
+export const fetchAllOrdersAdmin = () => api.get('/api/admin/orders');
 // Адреси
 export const fetchUserAddresses = (userId) => api.get(`/api/addresses/user/${userId}`);
 export const createAddress = (addressData) => api.post('/api/addresses/create/address', addressData);
