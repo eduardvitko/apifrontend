@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Alert, Spinner, Form } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО ТІЛЬКИ ПОТРІБНІ ФУНКЦІЇ ДЛЯ КОРИСТУВАЧА
+// 1. ІМПОРТУЄМО ПРАВИЛЬНИЙ НАБІР ФУНКЦІЙ (БЕЗ fetchUserProfile та fetchOrdersByUserId)
 import { fetchMyOrders, cancelOrder, deleteOrder } from '../api';
 
 const OrdersPage = () => {
@@ -14,7 +14,7 @@ const OrdersPage = () => {
     const [sortOrder, setSortOrder] = useState('desc');
     const navigate = useNavigate();
 
-    // 2. СПРОЩУЄМО ФУНКЦІЮ ЗАВАНТАЖЕННЯ. ТЕПЕР ТУТ ЛИШЕ ОДИН ЗАПИТ!
+    // 2. СПРОЩЕНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ. ТЕПЕР ТУТ ЛИШЕ ОДИН ЗАПИТ!
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         setError('');
@@ -146,6 +146,7 @@ const OrdersPage = () => {
                                         <h6 className="mt-3">Товари:</h6>
                                         <Table striped bordered size="sm" className="mb-2">
                                             <tbody>
+                                            {/* 3. НАДІЙНА ПЕРЕВІРКА, ЩОБ УНИКНУТИ ПОМИЛОК З `items: null` */}
                                             {order.items && order.items.length > 0 ? (
                                                 order.items.map(item => (
                                                     <tr key={item.id}>
