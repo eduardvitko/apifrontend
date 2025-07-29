@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Alert, Spinner, Form } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО ОНОВЛЕНИЙ НАБІР ФУНКЦІЙ
-import { fetchMyOrders, cancelOrder, deleteOrder } from '../api';
+// 1. ІМПОРТУЄМО ПРАВИЛЬНИЙ НАБІР ФУНКЦІЙ
+import { fetchUserProfile, fetchOrdersByUserId, cancelOrder, deleteOrder } from '../api';
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([]);
@@ -14,19 +14,23 @@ const OrdersPage = () => {
     const [sortOrder, setSortOrder] = useState('desc');
     const navigate = useNavigate();
 
-    // 2. СПРОЩЕНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ. ТЕПЕР ТУТ ЛИШЕ ОДИН ЗАПИТ!
+    // 2. ПОВЕРТАЄМО ЛОГІКУ З ДВОМА ЗАПИТАМИ, ЯКА ВІДПОВІДАЄ ВАШОМУ API
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         setError('');
         setMessage('');
 
         try {
-            // Робимо один ефективний запит. Бекенд сам визначить користувача за токеном.
-            const response = await fetchMyOrders();
-            setOrders(response.data);
+            // Крок 1: Отримуємо профіль користувача, щоб дізнатися його ID
+            const userResponse = await fetchUserProfile();
+            const userId = userResponse.data.id;
+
+            // Крок 2: Маючи ID, отримуємо замовлення ТІЛЬКИ цього користувача
+            const ordersResponse = await fetchOrdersByUserId(userId);
+            setOrders(ordersResponse.data);
+
         } catch (err) {
             console.error("Помилка завантаження замовлень:", err);
-            // Глобальний перехоплювач в api.js сам обробить помилки авторизації
             setError(err.response?.data?.message || 'Помилка мережі або сервера.');
         } finally {
             setLoading(false);
@@ -50,7 +54,7 @@ const OrdersPage = () => {
             ordersCopy.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
             if (sortOrder === 'asc') ordersCopy.reverse();
         } else if (sortBy === 'status') {
-            const statusOrder = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'PAID'];
+            const statusOrder = ['PENDING', 'PROCESSING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
             ordersCopy.sort((a, b) => {
                 const indexA = statusOrder.indexOf(a.status);
                 const indexB = statusOrder.indexOf(b.status);

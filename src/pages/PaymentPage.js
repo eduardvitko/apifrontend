@@ -5,7 +5,7 @@ import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from '
 // 1. ІМПОРТУЄМО АДАПТОВАНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ
 import {
     fetchUserProfile,
-    fetchMyOrders,
+    fetchOrdersByUserId,
     fetchUserAddresses,
     createAddress,
     fetchMyPayments, // Ця функція може потребувати адаптації на бекенді
