@@ -80,9 +80,9 @@ export const createOrder = (orderData) => api.post('/api/orders/create', orderDa
 export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
 
 // Дії з замовленнями
+export const fetchMyOrders = () => api.get('/api/orders/my'); // <-- НАША НОВА ЕФЕКТИВНА ФУНКЦІЯ
 export const cancelOrder = (orderId) => api.put(`/api/orders/${orderId}/cancel`);
 export const deleteOrder = (orderId) => api.delete(`/api/orders/delete/${orderId}`);
-export const fetchAllOrdersAdmin = () => api.get('/api/admin/orders');
 // Адреси
 export const fetchUserAddresses = (userId) => api.get(`/api/addresses/user/${userId}`);
 export const createAddress = (addressData) => api.post('/api/addresses/create/address', addressData);
