@@ -70,9 +70,9 @@ export const fetchUserAddresses = () => api.get('/api/addresses/my');
 export const createAddress = (addressData) => api.post('/api/addresses/create/address', addressData);
 
 
-// --- 6. Замовлення (Orders) ---
+// --- 6. Замовлення (Orders) ---//
 export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
-export const fetchOrdersByUserId = () => api.get('/api/orders/my');
+export const fetchMyOrders = () => api.get('/api/orders/my');
 export const cancelOrder = (orderId) => api.put(`/api/orders/${orderId}/cancel`);
 export const deleteOrder = (orderId) => api.delete(`/api/orders/delete/${orderId}`);
 export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`);
