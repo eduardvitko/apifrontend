@@ -79,7 +79,7 @@ export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`
 export const updateOrderAddress = (orderId, addressId) => api.put(`/api/orders/${orderId}/address/${addressId}`);
 export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
 
-// Для адміна
+// Для адміна//
 export const fetchAllOrdersAdmin = () => api.get('/api/admin/orders');
 // Адреси
 export const fetchUserAddresses = (userId) => api.get(`/api/addresses/user/${userId}`);
