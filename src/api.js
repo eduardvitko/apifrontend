@@ -77,7 +77,7 @@ export const createOrder = (orderData) => api.post('/api/orders/create', orderDa
 
 // Отримання замовлень за ID користувача
 
-export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
+//export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
 
 // Дії з замовленнями
 export const fetchMyOrders = () => api.get('/api/orders/my'); // <-- НАША НОВА ЕФЕКТИВНА ФУНКЦІЯ
