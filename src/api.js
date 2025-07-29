@@ -66,23 +66,18 @@ export const fetchProductsByCategory = (categoryId) => api.get(`/api/products/by
 
 
 
-// --- Orders ---
-export const fetchMyOrders = () => api.get('/api/orders/my'); // We already have this
-export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`);
-export const updateOrderAddress = (orderId, addressId) => api.put(`/api/orders/${orderId}/address/${addressId}`);
 
-// --- Замовлення (Orders) ---
-export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
-// --- Замовлення (Orders) ---
 
-// Отримання замовлень за ID користувача
 
-//export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
 
 // Дії з замовленнями
 export const fetchMyOrders = () => api.get('/api/orders/my'); // <-- НАША НОВА ЕФЕКТИВНА ФУНКЦІЯ
 export const cancelOrder = (orderId) => api.put(`/api/orders/${orderId}/cancel`);
 export const deleteOrder = (orderId) => api.delete(`/api/orders/delete/${orderId}`);
+export const createOrder = (orderData) => api.post('/api/orders/create', orderData);
+export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`);
+export const updateOrderAddress = (orderId, addressId) => api.put(`/api/orders/${orderId}/address/${addressId}`);
+export const fetchOrdersByUserId = (userId) => api.get(`/api/orders/user/${userId}`);
 // Адреси
 export const fetchUserAddresses = (userId) => api.get(`/api/addresses/user/${userId}`);
 export const createAddress = (addressData) => api.post('/api/addresses/create/address', addressData);
