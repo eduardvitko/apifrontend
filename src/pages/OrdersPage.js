@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Table, Alert, Spinner, Form } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО ПРАВИЛЬНИЙ НАБІР ФУНКЦІЙ
+// 1. ІМПОРТУЄМО ПРАВИЛЬНИЙ НАБІР ФУНКЦІЙ, ЩО ВІДПОВІДАЄ API.JS
 import { fetchUserProfile, fetchOrdersByUserId, cancelOrder, deleteOrder } from '../api';
 
 const OrdersPage = () => {
@@ -47,14 +47,14 @@ const OrdersPage = () => {
         fetchOrders();
     }, [fetchOrders, navigate]);
 
-    // Функція сортування (без змін, вона правильна)
+    // Функція сортування
     const sortOrders = (ordersToSort) => {
         const ordersCopy = [...ordersToSort];
         if (sortBy === 'date') {
             ordersCopy.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
             if (sortOrder === 'asc') ordersCopy.reverse();
         } else if (sortBy === 'status') {
-            const statusOrder = ['PENDING', 'PROCESSING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+            const statusOrder = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'PAID'];
             ordersCopy.sort((a, b) => {
                 const indexA = statusOrder.indexOf(a.status);
                 const indexB = statusOrder.indexOf(b.status);
@@ -70,7 +70,7 @@ const OrdersPage = () => {
         try {
             await cancelOrder(orderId);
             setMessage('Замовлення успішно скасовано! ❌');
-            fetchOrders(); // Перезавантажуємо дані з сервера для актуальності
+            fetchOrders();
         } catch (err) {
             setError(err.response?.data?.message || 'Помилка при скасуванні замовлення.');
         }

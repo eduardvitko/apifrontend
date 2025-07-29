@@ -2,13 +2,13 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО АДАПТОВАНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ
+// 1. ІМПОРТУЄМО ПРАВИЛЬНИЙ НАБІР ФУНКЦІЙ
 import {
     fetchUserProfile,
     fetchOrdersByUserId,
     fetchUserAddresses,
     createAddress,
-    fetchMyPayments, // Ця функція може потребувати адаптації на бекенді
+    fetchUserPayments, // Ваша функція-заглушка
     createPayment,
     updatePayment,
     deletePayment,
@@ -41,7 +41,7 @@ const PaymentPage = () => {
             const userId = userResponse.data.id;
 
             const [paymentsRes, ordersRes, addressesRes] = await Promise.all([
-                fetchMyPayments(), // Може повернути помилку, якщо ендпоінт /my не існує
+                fetchUserPayments(userId), // Використовуємо функцію-заглушку
                 fetchOrdersByUserId(userId),
                 fetchUserAddresses(userId)
             ]);
