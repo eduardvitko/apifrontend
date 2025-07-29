@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Table, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Table, Alert, Spinner, Form } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО ОНОВЛЕНИЙ НАБІР ФУНКЦІЙ (БЕЗ fetchUserProfile та fetchOrdersByUserId)
+// 1. ІМПОРТУЄМО ТІЛЬКИ ПОТРІБНІ ФУНКЦІЇ ДЛЯ КОРИСТУВАЧА
 import { fetchMyOrders, cancelOrder, deleteOrder } from '../api';
 
 const OrdersPage = () => {
@@ -14,7 +14,7 @@ const OrdersPage = () => {
     const [sortOrder, setSortOrder] = useState('desc');
     const navigate = useNavigate();
 
-    // 2. СПРОЩЕНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ. ТЕПЕР ТУТ ЛИШЕ ОДИН ЗАПИТ!
+    // 2. СПРОЩУЄМО ФУНКЦІЮ ЗАВАНТАЖЕННЯ. ТЕПЕР ТУТ ЛИШЕ ОДИН ЗАПИТ!
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         setError('');
@@ -105,7 +105,7 @@ const OrdersPage = () => {
 
                 {orders.length > 0 && (
                     <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                        <Button variant="outline-secondary" onClick={() => navigate(-1)}>← Назад</Button>
+                        <Button variant="outline-secondary" onClick={() => navigate('/')}>← До покупок</Button>
                         <div className="d-flex align-items-center gap-2">
                             <Form.Label htmlFor="sortBy" className="fw-semibold text-nowrap mb-0">Сортувати за:</Form.Label>
                             <Form.Select id="sortBy" size="sm" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ width: 'auto' }}>
@@ -123,7 +123,7 @@ const OrdersPage = () => {
                 {error && <Alert variant="danger">{error}</Alert>}
                 {message && <Alert variant="success">{message}</Alert>}
 
-                {sortedOrders.length === 0 ? (
+                {!loading && sortedOrders.length === 0 ? (
                     <div className="text-center py-5">
                         <p className="text-muted fs-5">У вас поки що немає замовлень. 😔</p>
                         <Button variant="primary" onClick={() => navigate('/')}>Перейти до покупок</Button>
@@ -146,7 +146,6 @@ const OrdersPage = () => {
                                         <h6 className="mt-3">Товари:</h6>
                                         <Table striped bordered size="sm" className="mb-2">
                                             <tbody>
-                                            {/* 3. НАДІЙНА ПЕРЕВІРКА, ЩОБ УНИКНУТИ ПОМИЛОК З `items: null` */}
                                             {order.items && order.items.length > 0 ? (
                                                 order.items.map(item => (
                                                     <tr key={item.id}>
