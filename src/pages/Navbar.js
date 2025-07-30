@@ -50,7 +50,7 @@ const Navbar = () => {
         // а на менших - згорнуте в "бургер".
         <BootstrapNavbar bg="dark" variant="dark" expand="lg" sticky="top">
             <Container>
-                //<BootstrapNavbar.Brand as={Link} to="/">{t('welcome')}</BootstrapNavbar.Brand>
+                {/*<BootstrapNavbar.Brand as={Link} to="/">{t('welcome')}</BootstrapNavbar.Brand>*/}
 
                 {/* 3. КНОПКА "БУРГЕР", яка з'являється на мобільних */}
                 <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />
