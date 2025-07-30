@@ -1,21 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-
-// 1. ІМПОРТУЄМО КОМПОНЕНТИ З REACT-BOOTSTRAP
 import { Container, Row, Col, Card, Button, Table, Alert, Form, Image } from 'react-bootstrap';
 
-// Імпортуємо нашу централізовану функцію.
-// Вона потрібна для переходу на сторінку CreateOrderPage, а не для прямого створення.
-// import { createOrder } from '../api'; // Поки що не потрібна
-
 const CartPage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const [cartItems, setCartItems] = useState([]);
-    const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+
+    // Стан та функції для роботи з кошиком
+    const [cartItems, setCartItems] = React.useState([]);
+    const [total, setTotal] = React.useState(0);
+    const [error, setError] = React.useState(''); // Для відображення повідомлень
+
+    const calculateTotal = (items) => {
+        const newTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+        setTotal(newTotal);
+    };
+
+    React.useEffect(() => {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        setCartItems(cart);
+        calculateTotal(cart);
+    }, []);
 
     const updateQuantity = (productId, newQuantity) => {
         const updatedCart = cartItems.map(item =>
@@ -35,44 +41,36 @@ const CartPage = () => {
         calculateTotal(updatedCart);
     };
 
-    const calculateTotal = (items) => {
-        const newTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        setTotal(newTotal);
-    };
+    const getProductName = (item) => item.name || item.productName || t('name_missing');
 
-    useEffect(() => {
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
-        setCartItems(cart);
-        calculateTotal(cart);
-    }, []);
-
-    const getProductName = (item) => item.nameUa || item.name || item.productName || t('name_missing');
-
-    // Оновлена функція, яка переходить на сторінку оформлення
+    // ↓↓↓↓↓↓  ВИПРАВЛЕНА ФУНКЦІЯ  ↓↓↓↓↓↓
+    /**
+     * Ця функція тепер просто перенаправляє на сторінку оформлення замовлення.
+     * Всі перевірки (чи залогінений користувач) буде робити сама сторінка CreateOrderPage.
+     */
     const handleProceedToCheckout = () => {
-        if (!localStorage.getItem('token')) {
-            setError(t('login_required_for_checkout'));
-            setTimeout(() => navigate('/login'), 2000);
-            return;
-        }
         if (cartItems.length === 0) {
-            setError(t('cart_empty'));
+            setError(t('cart_empty')); // Показуємо помилку, якщо кошик порожній
             return;
         }
+        // Просто перенаправляємо, передаючи дані кошика.
         navigate('/orders/create', { state: { items: cartItems, total: total } });
     };
 
     const formatPrice = (price) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(price || 0);
+    const changeLanguage = (lng) => i18n.changeLanguage(lng);
 
-    // --- JSX-розмітка з компактним дизайном ---
 
-    if (cartItems.length === 0 && !error) {
+    // --- JSX-розмітка ---
+
+    if (cartItems.length === 0) {
         return (
             <Container className="mt-5 text-center">
                 <Card className="p-5 shadow-sm">
                     <Card.Body>
                         <h3>🛒 {t('your_cart')}</h3>
                         <p className="lead mt-3">{t('cart_empty')}</p>
+                        {error && <Alert variant="warning" className="mt-3">{error}</Alert>}
                         <Button variant="primary" className="mt-3" onClick={() => navigate('/')}>
                             {t('to_shopping')}
                         </Button>
@@ -83,13 +81,15 @@ const CartPage = () => {
     }
 
     return (
-        // 2. ОБГОРТАЄМО ВСЕ В ROW ТА COL, ЩОБ ОБМЕЖИТИ ШИРИНУ
         <Container className="mt-5">
             <Row className="justify-content-center">
-                <Col lg={8} md={10}> {/* lg={8} - на великих екранах, md={10} - на середніх */}
+                <Col lg={8} md={10}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h3>🛒 {t('your_cart')}</h3>
-                        {/* Кнопки мови можна винести в Navbar для глобального доступу */}
+                        <div className="d-flex">
+                            <Button onClick={() => changeLanguage('ua')} variant="outline-primary" size="sm" className="me-2">UA</Button>
+                            <Button onClick={() => changeLanguage('en')} variant="outline-secondary" size="sm">EN</Button>
+                        </div>
                     </div>
 
                     {error && <Alert variant="danger">{error}</Alert>}
@@ -97,7 +97,7 @@ const CartPage = () => {
                     <Card className="shadow-sm">
                         <Card.Body>
                             <Table responsive="sm" className="align-middle">
-                                <thead /* className="table-light" */>
+                                <thead>
                                 <tr>
                                     <th colSpan="2">{t('name')}</th>
                                     <th>{t('price')}</th>
@@ -129,7 +129,7 @@ const CartPage = () => {
                                                 style={{ maxWidth: '80px' }}
                                             />
                                         </td>
-                                        <td className="text-end">{formatPrice(item.price * item.quantity)}</td>
+                                        <td className="text-end">{formatPrice((item.price || 0) * (item.quantity || 1))}</td>
                                         <td className="text-center">
                                             <Button variant="outline-danger" size="sm" onClick={() => removeItem(item.productId)}>
                                                 ×
@@ -140,7 +140,7 @@ const CartPage = () => {
                                 </tbody>
                             </Table>
                         </Card.Body>
-                        <Card.Footer className="d-flex justify-content-between align-items-center">
+                        <Card.Footer className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <Button variant="outline-secondary" onClick={() => navigate('/')}>
                                 ← {t('back_to_shopping')}
                             </Button>
@@ -149,7 +149,7 @@ const CartPage = () => {
                                 <Button
                                     variant="success"
                                     size="lg"
-                                    onClick={handleProceedToCheckout} // Використовуємо нову функцію
+                                    onClick={handleProceedToCheckout} // <-- Тепер ця кнопка працює правильно
                                 >
                                     {`✅ ${t('checkout')}`}
                                 </Button>
