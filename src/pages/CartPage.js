@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Table, Alert, Form, Image } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Table, Alert, Form, Image, Spinner } from 'react-bootstrap';
+
+// 1. ПОВЕРТАЄМО ІМПОРТ функції createOrder
+import { createOrder } from '../api';
 
 const CartPage = () => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const navigate = useNavigate();
-
-    // Стан та функції для роботи з кошиком
-    const [cartItems, setCartItems] = React.useState([]);
-    const [total, setTotal] = React.useState(0);
-    const [error, setError] = React.useState(''); // Для відображення повідомлень
+    const [cartItems, setCartItems] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false); // Стан для блокування кнопки
+    const [error, setError] = useState('');
 
     const calculateTotal = (items) => {
         const newTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
         setTotal(newTotal);
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         setCartItems(cart);
         calculateTotal(cart);
@@ -42,24 +44,56 @@ const CartPage = () => {
     };
 
     const getProductName = (item) => item.name || item.productName || t('name_missing');
+    const formatPrice = (price) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(price || 0);
 
-    // ↓↓↓↓↓↓  ВИПРАВЛЕНА ФУНКЦІЯ  ↓↓↓↓↓↓
-    /**
-     * Ця функція тепер просто перенаправляє на сторінку оформлення замовлення.
-     * Всі перевірки (чи залогінений користувач) буде робити сама сторінка CreateOrderPage.
-     */
-    const handleProceedToCheckout = () => {
-        if (cartItems.length === 0) {
-            setError(t('cart_empty')); // Показуємо помилку, якщо кошик порожній
+    // 2. ПОВЕРТАЄМО ПОВНУ ЛОГІКУ СТВОРЕННЯ ЗАМОВЛЕННЯ
+    const handleCheckout = async () => {
+        setError('');
+        setLoading(true);
+
+        if (!localStorage.getItem('token')) {
+            setError('Будь ласка, увійдіть, щоб оформити замовлення.');
+            setLoading(false);
+            setTimeout(() => navigate('/login'), 2000);
             return;
         }
-        // Просто перенаправляємо, передаючи дані кошика.
-        navigate('/orders/create', { state: { items: cartItems, total: total } });
+
+        if (cartItems.length === 0) {
+            setError('Ваш кошик порожній.');
+            setLoading(false);
+            return;
+        }
+
+        // Готуємо дані для відправки на бекенд
+        const orderItemsDto = cartItems.map(item => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            productName: item.name // Переконайтесь, що поле 'name' є в об'єкті товару в кошику
+        }));
+
+        try {
+            // Викликаємо API для створення замовлення
+            const response = await createOrder(orderItemsDto);
+
+            if (response.status === 200 || response.status === 201) {
+                // Очищуємо кошик
+                localStorage.removeItem('cart');
+                setCartItems([]);
+                setTotal(0);
+
+                alert('Замовлення успішно створено!');
+
+                // 3. ПЕРЕНАПРАВЛЯЄМО НА СТОРІНКУ "МОЇ ЗАМОВЛЕННЯ"
+                navigate('/orders');
+            }
+        } catch (err) {
+            console.error('Помилка при оформленні замовлення:', err);
+            setError(err.response?.data?.message || 'Сталася помилка при оформленні замовлення.');
+        } finally {
+            setLoading(false);
+        }
     };
-
-    const formatPrice = (price) => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(price || 0);
-    const changeLanguage = (lng) => i18n.changeLanguage(lng);
-
 
     // --- JSX-розмітка ---
 
@@ -70,7 +104,6 @@ const CartPage = () => {
                     <Card.Body>
                         <h3>🛒 {t('your_cart')}</h3>
                         <p className="lead mt-3">{t('cart_empty')}</p>
-                        {error && <Alert variant="warning" className="mt-3">{error}</Alert>}
                         <Button variant="primary" className="mt-3" onClick={() => navigate('/')}>
                             {t('to_shopping')}
                         </Button>
@@ -86,10 +119,6 @@ const CartPage = () => {
                 <Col lg={8} md={10}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <h3>🛒 {t('your_cart')}</h3>
-                        <div className="d-flex">
-                            <Button onClick={() => changeLanguage('ua')} variant="outline-primary" size="sm" className="me-2">UA</Button>
-                            <Button onClick={() => changeLanguage('en')} variant="outline-secondary" size="sm">EN</Button>
-                        </div>
                     </div>
 
                     {error && <Alert variant="danger">{error}</Alert>}
@@ -110,30 +139,16 @@ const CartPage = () => {
                                 {cartItems.map(item => (
                                     <tr key={item.productId}>
                                         <td style={{width: '70px'}}>
-                                            <Image
-                                                src={item.imageUrl || 'https://via.placeholder.com/60'}
-                                                alt={getProductName(item)}
-                                                rounded
-                                                style={{ width: '60px', height: '60px', objectFit: 'cover' }}
-                                            />
+                                            <Image src={item.imageUrl || 'https://via.placeholder.com/60'} alt={getProductName(item)} rounded style={{ width: '60px', height: '60px', objectFit: 'cover' }}/>
                                         </td>
                                         <td>{getProductName(item)}</td>
                                         <td>{formatPrice(item.price)}</td>
                                         <td>
-                                            <Form.Control
-                                                type="number"
-                                                size="sm"
-                                                min="1"
-                                                value={item.quantity}
-                                                onChange={(e) => updateQuantity(item.productId, e.target.value)}
-                                                style={{ maxWidth: '80px' }}
-                                            />
+                                            <Form.Control type="number" size="sm" min="1" value={item.quantity} onChange={(e) => updateQuantity(item.productId, e.target.value)} style={{ maxWidth: '80px' }} />
                                         </td>
                                         <td className="text-end">{formatPrice((item.price || 0) * (item.quantity || 1))}</td>
                                         <td className="text-center">
-                                            <Button variant="outline-danger" size="sm" onClick={() => removeItem(item.productId)}>
-                                                ×
-                                            </Button>
+                                            <Button variant="outline-danger" size="sm" onClick={() => removeItem(item.productId)}>×</Button>
                                         </td>
                                     </tr>
                                 ))}
@@ -149,9 +164,15 @@ const CartPage = () => {
                                 <Button
                                     variant="success"
                                     size="lg"
-                                    onClick={handleProceedToCheckout} // <-- Тепер ця кнопка працює правильно
+                                    onClick={handleCheckout}
+                                    disabled={loading}
                                 >
-                                    {`✅ ${t('checkout')}`}
+                                    {loading ? (
+                                        <>
+                                            <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                                            <span className="ms-2">{t('processing')}...</span>
+                                        </>
+                                    ) : `✅ ${t('checkout')}`}
                                 </Button>
                             </div>
                         </Card.Footer>
