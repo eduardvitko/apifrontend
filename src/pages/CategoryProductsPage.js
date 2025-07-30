@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
+import { Container, Button, Table } from 'react-bootstrap';
 // 1. ІМПОРТУЄМО нашу централізовану функцію.
 //    Ми перейменовуємо її при імпорті, щоб уникнути конфлікту імен.
 import { fetchProductsByCategory as fetchProductsByCategoryAPI } from '../api';
@@ -94,7 +94,7 @@ const CategoryProductsPage = () => {
             {products.length === 0 ? (
                 <p>{t('no_products')}</p>
             ) : (
-                <table className="table table-bordered table-hover">
+                <Table responsive striped bordered hover className="table-dark">
                     <thead className="table-dark">
                     <tr>
                         <th>{t('image')}</th>
@@ -137,7 +137,7 @@ const CategoryProductsPage = () => {
                         </tr>
                     ))}
                     </tbody>
-                </table>
+                </Table>
             )}
         </div>
     );
