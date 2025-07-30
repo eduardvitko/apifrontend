@@ -47,7 +47,10 @@ export const fetchAdminCategories = () => api.get('/api/admin/all/categories');
 export const createCategory = (data) => api.post('/api/admin/create/category', data);
 export const updateCategory = (id, data) => api.put(`/api/admin/update/category/${id}`, data);
 export const deleteCategory = (id) => api.delete(`/api/admin/delete/category/${id}`);
-
+export const fetchAllImages = () => api.get('/api/images/all');
+export const createImage = (imageData) => api.post('/api/images', imageData);
+export const updateImage = (imageId, imageData) => api.put(`/api/images/update/${imageId}`, imageData);
+export const deleteImage = (imageId) => api.delete(`/api/images/delete/${imageId}`);
 
 // --- 4. Товари ---
 // Публічні (з ProductController)
