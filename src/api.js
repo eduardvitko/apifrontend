@@ -3,7 +3,6 @@ import axios from 'axios';
 const api = axios.create({
     baseURL: process.env.REACT_APP_API_URL,
 });
-
 api.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -12,15 +11,31 @@ api.interceptors.request.use(config => {
     return config;
 });
 
+// ↓↓↓ ОНОВЛЕНИЙ І БІЛЬШ "РОЗУМНИЙ" ПЕРЕХОПЛЮВАЧ ВІДПОВІДЕЙ ↓↓↓
 api.interceptors.response.use(
+    // Якщо відповідь успішна, просто повертаємо її
     (response) => response,
+
+    // Якщо виникла помилка
     (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            localStorage.removeItem('token');
-            if (window.location.pathname !== '/login' && window.location.pathname !== '/admin/login') {
-                window.location = '/login';
+        // Перевіряємо, чи існує відповідь від сервера
+        if (error.response) {
+            // Вилогінюємо ТІЛЬКИ якщо сесія закінчилася (401 Unauthorized)
+            if (error.response.status === 401) {
+                localStorage.removeItem('token');
+                // Перенаправляємо на сторінку входу, щоб уникнути циклічних помилок
+                if (window.location.pathname !== '/login' && window.location.pathname !== '/admin/login') {
+                    // Можна додати сповіщення для користувача
+                    alert("Ваша сесія закінчилася. Будь ласка, увійдіть знову.");
+                    window.location = '/login';
+                }
             }
+            // Помилку 403 (і всі інші) ми НЕ обробляємо глобально,
+            // а дозволяємо компонентам обробити її самостійно (показати повідомлення).
         }
+
+        // Повертаємо помилку, щоб її можна було обробити в компоненті
+        // (наприклад, у блоці catch, щоб встановити setError)
         return Promise.reject(error);
     }
 );
