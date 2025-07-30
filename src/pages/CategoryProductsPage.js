@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Container, Button, Table } from 'react-bootstrap';
-// 1. ІМПОРТУЄМО нашу централізовану функцію.
-//    Ми перейменовуємо її при імпорті, щоб уникнути конфлікту імен.
+
+// 1. ІМПОРТУЄМО КОМПОНЕНТИ З REACT-BOOTSTRAP
+import { Container, Row, Col, Card, Button, Spinner, Alert } from 'react-bootstrap';
+
 import { fetchProductsByCategory as fetchProductsByCategoryAPI } from '../api';
 
 const CategoryProductsPage = () => {
-    const { id } = useParams(); // Отримуємо ID категорії з URL
+    const { id } = useParams();
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
 
@@ -16,18 +17,11 @@ const CategoryProductsPage = () => {
     const [error, setError] = useState('');
     const [addingProductId, setAddingProductId] = useState(null);
 
-    // 2. ВИДАЛЯЄМО ручне отримання токена.
-    //    Для публічних запитів він не потрібен. Для захищених - його додасть перехоплювач.
-    // const token = localStorage.getItem('jwt'); // <-- ЦЕЙ РЯДОК БІЛЬШЕ НЕ ПОТРІБЕН
-
-    // 3. ВИКОРИСТОВУЄМО useCallback для оптимізації та правильної роботи useEffect
     const fetchProducts = useCallback(async () => {
-        if (!id) return; // Не робити запит, якщо ID ще немає
-
+        if (!id) return;
         setLoading(true);
         setError('');
         try {
-            // 4. ВИКОРИСТОВУЄМО нашу нову, централізовану функцію з api.js
             const response = await fetchProductsByCategoryAPI(id);
             setProducts(response.data);
         } catch (e) {
@@ -36,14 +30,12 @@ const CategoryProductsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [id, t]); // Залежності: id і функція перекладу t
+    }, [id, t]);
 
-    // 5. useEffect тепер залежить від мемоізованої функції fetchProducts
     useEffect(() => {
         fetchProducts();
-    }, [fetchProducts, i18n.language]); // Додаємо i18n.language для перезавантаження при зміні мови
+    }, [fetchProducts, i18n.language]);
 
-    // Логіка додавання в кошик - без змін, вона правильна
     const addToCart = (product) => {
         setAddingProductId(product.id);
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -56,90 +48,95 @@ const CategoryProductsPage = () => {
                 productId: product.id,
                 name: product.name,
                 price: product.price,
-                quantity: 1
+                quantity: 1,
+                imageUrl: product.images && product.images.length > 0 ? product.images[0].url : null
             });
         }
 
         localStorage.setItem('cart', JSON.stringify(cart));
 
-        // Можна додати невелику затримку для кращого UX
         setTimeout(() => {
             setAddingProductId(null);
             navigate('/cart');
         }, 300);
     };
 
-    // Функція зміни мови - без змін
     const changeLanguage = (lng) => i18n.changeLanguage(lng);
 
-    // --- JSX-розмітка без змін ---
-    // Вона написана добре і не потребує правок
+    if (loading) {
+        return (
+            <Container className="text-center mt-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-2">{t('loading')}...</p>
+            </Container>
+        );
+    }
 
-    if (loading) return <p className="text-center mt-5">{t('loading')}</p>;
-    if (error) return <p className="text-danger text-center mt-5">{error}</p>;
+    if (error) {
+        return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
+    }
 
     return (
-        <div className="container mt-5">
-            <div className="d-flex justify-content-end mb-3">
-                <button onClick={() => changeLanguage('ua')} className="btn btn-outline-primary btn-sm me-2">UA</button>
-                <button onClick={() => changeLanguage('en')} className="btn btn-outline-secondary btn-sm">EN</button>
+        <Container className="mt-5">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <Button variant="secondary" onClick={() => navigate(-1)}>
+                    ← {t('back')}
+                </Button>
+                <div className="d-flex">
+                    <Button onClick={() => changeLanguage('ua')} variant="outline-primary" size="sm" className="me-2">UA</Button>
+                    <Button onClick={() => changeLanguage('en')} variant="outline-secondary" size="sm">EN</Button>
+                </div>
             </div>
 
-            <button className="btn btn-secondary mb-3" onClick={() => navigate(-1)}>
-                ← {t('back')}
-            </button>
-
-            <h3>{t('products_in_category')}</h3>
+            <h3 className="mb-4">{t('products_in_category')}</h3>
 
             {products.length === 0 ? (
-                <p>{t('no_products')}</p>
+                <Alert variant="info">{t('no_products')}</Alert>
             ) : (
-                <Table responsive striped bordered hover className="table-dark">
-                    <thead className="table-dark">
-                    <tr>
-                        <th>{t('image')}</th>
-                        <th>{t('name')}</th>
-                        <th>{t('description')}</th>
-                        <th>{t('price')}</th>
-                        <th>{t('stock')}</th>
-                        <th></th>
-                    </tr>
-                    </thead>
-                    <tbody>
+                // 2. ВИКОРИСТОВУЄМО СІТКУ BOOTSTRAP ЗАМІСТЬ ТАБЛИЦІ
+                <Row xs={1} sm={2} md={3} lg={4} className="g-4">
                     {products.map(product => (
-                        <tr key={product.id}>
-                            <td style={{ width: 100, textAlign: 'center' }}>
-                                {product.images && product.images.length > 0 ? (
-                                    <img
-                                        src={product.images[0].url}
-                                        alt={product.images[0].altText || product.name}
-                                        style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 5 }}
-                                    />
-                                ) : (
-                                    <span className="text-muted">{t('no_image')}</span>
-                                )}
-                            </td>
-                            <td style={{ verticalAlign: 'middle' }}>{product.name}</td>
-                            <td style={{ verticalAlign: 'middle' }}>{product.description}</td>
-                            <td style={{ verticalAlign: 'middle' }}>{new Intl.NumberFormat('uk-UA', {
-                                style: 'currency', currency: 'UAH'
-                            }).format(product.price)}</td>
-                            <td style={{ verticalAlign: 'middle' }}>{product.stock}</td>
-                            <td style={{ verticalAlign: 'middle' }}>
-                                <button
-                                    className="btn btn-primary"
-                                    disabled={addingProductId === product.id}
-                                    onClick={() => addToCart(product)}
-                                >
-                                    {addingProductId === product.id ? t('adding') : t('add_to_cart')}
-                                </button>
-                            </td>
-                        </tr>
+                        <Col key={product.id}>
+                            <Card className="h-100 shadow-sm d-flex flex-column">
+                                {/* Зображення товару поверх картки */}
+                                <Card.Img
+                                    variant="top"
+                                    src={product.images && product.images.length > 0 ? product.images[0].url : 'https://via.placeholder.com/400x300?text=No+Image'}
+                                    alt={product.name}
+                                    style={{ height: '200px', objectFit: 'cover', cursor: 'pointer' }}
+                                    onClick={() => navigate(`/products/${product.id}`)} // Перехід на сторінку деталей
+                                />
+                                <Card.Body className="d-flex flex-column flex-grow-1">
+                                    {/* Назва, опис, ціна і залишок всередині "тіла" картки */}
+                                    <Card.Title style={{ cursor: 'pointer' }} onClick={() => navigate(`/products/${product.id}`)}>
+                                        {product.name}
+                                    </Card.Title>
+                                    <Card.Text className="text-muted small">{product.description}</Card.Text>
+
+                                    <div className="mt-auto">
+                                        <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span className="fw-bold fs-5">{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(product.price)}</span>
+                                            <span className="text-muted small">Залишок: {product.stock}</span>
+                                        </div>
+
+                                        {/* Кнопка "Додати в кошик" знизу */}
+                                        <Button
+                                            variant="primary"
+                                            className="w-100"
+                                            disabled={addingProductId === product.id || product.stock === 0}
+                                            onClick={() => addToCart(product)}
+                                        >
+                                            {product.stock === 0 ? 'Немає в наявності' :
+                                                (addingProductId === product.id ? t('adding') : t('add_to_cart'))}
+                                        </Button>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
                     ))}
-                    </tbody>
-                </Table>
+                </Row>
             )}
-        </div>
+        </Container>
     );
 };
 
