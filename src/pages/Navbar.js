@@ -20,12 +20,16 @@ const Navbar = () => {
         const handleStorageChange = () => {
             setIsLoggedIn(!!localStorage.getItem('token'));
         };
+        // Перевіряємо статус при завантаженні
+        handleStorageChange();
+
+        // Слухаємо подію 'storage'
         window.addEventListener('storage', handleStorageChange);
+
         return () => {
             window.removeEventListener('storage', handleStorageChange);
         };
     }, []);
-
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (search.trim()) {
@@ -36,7 +40,7 @@ const Navbar = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
-        setIsLoggedIn(false);
+        window.dispatchEvent(new Event("storage"));
         navigate('/login');
     };
 

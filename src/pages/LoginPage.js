@@ -27,6 +27,7 @@ const LoginPage = () => {
 
                 // 2. Зберігаємо токен у localStorage
                 localStorage.setItem('token', token);
+                window.dispatchEvent(new Event("storage"));
 
                 // 3. *** ГОЛОВНА ЗМІНА ***
                 //    Одразу перенаправляємо на сторінку профілю,
