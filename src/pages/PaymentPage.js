@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Spinner } from 'react-bootstrap';
 
-// 1. ІМПОРТУЄМО ПРАВИЛЬНИЙ НАБІР ФУНКЦІЙ
+// 1. ІМПОРТУЄМО АДАПТОВАНІ ЦЕНТРАЛІЗОВАНІ ФУНКЦІЇ
 import {
     fetchUserProfile,
     fetchOrdersByUserId,
@@ -32,7 +32,7 @@ const PaymentPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // 2. ОНОВЛЕНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ ДАНИХ З ДВОМА КРОКАМИ
+    // Оновлена функція завантаження даних, що відповідає вашим контролерам
     const loadAllData = useCallback(async () => {
         setLoading(true);
         setError('');
@@ -66,7 +66,6 @@ const PaymentPage = () => {
         loadAllData();
     }, [loadAllData, navigate]);
 
-    // Ефект для авто-заповнення форми
     useEffect(() => {
         if (location.state?.orderId) {
             const { orderId, amount } = location.state;
@@ -79,7 +78,6 @@ const PaymentPage = () => {
         }
     }, [location.state]);
 
-    // Обробник змін у формі платежу
     const handlePaymentInputChange = (e) => {
         const { name, value } = e.target;
         setPaymentFormData(prev => ({ ...prev, [name]: value }));
@@ -174,11 +172,17 @@ const PaymentPage = () => {
         formRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // ↓↓↓↓↓↓  ВИПРАВЛЕННЯ №1  ↓↓↓↓↓↓
     const formatAddressById = (id) => {
         if (!id) return '-';
         const addr = addresses.find(a => a.id === id);
         if (!addr) return 'Адреса не знайдена';
-        return `${addr.city}, ${addr.street}`;
+
+        let formattedAddress = `${addr.city}, ${addr.street}, ${addr.houseNumber}`;
+        if (addr.apartmentNumber) {
+            formattedAddress += `, кв. ${addr.apartmentNumber}`;
+        }
+        return formattedAddress;
     };
 
     const unpaidOrders = orders.filter(order => order.status === 'PENDING');
@@ -230,7 +234,12 @@ const PaymentPage = () => {
                                         <Form.Label>Адреса доставки:</Form.Label>
                                         <Form.Select name="addressId" value={paymentFormData.addressId} onChange={handlePaymentInputChange} required>
                                             <option value="">Виберіть адресу</option>
-                                            {addresses.map(a => <option key={a.id} value={a.id}>{a.city}, {a.street}</option>)}
+                                            {/* ↓↓↓↓↓↓  ВИПРАВЛЕННЯ №2  ↓↓↓↓↓↓ */}
+                                            {addresses.map(a => (
+                                                <option key={a.id} value={a.id}>
+                                                    {a.city}, {a.street}, {a.houseNumber}
+                                                </option>
+                                            ))}
                                         </Form.Select>
                                     </Form.Group>
                                 </Col>
