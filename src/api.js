@@ -52,7 +52,9 @@ export const checkAuth = () => api.get('/api/auth/check');
 
 // --- 2. Користувач ---
 export const fetchUserProfile = () => api.get('/api/user/me');
-
+export const fetchAllUsers = () => api.get('/api/admin/users');
+export const updateUser = (userId, userData) => api.put(`/api/admin/update/${userId}`, userData);
+export const deleteUser = (userId) => api.delete(`/api/admin/delete/${userId}`);
 
 // --- 3. Категорії ---
 // Публічні (з CategoryController)

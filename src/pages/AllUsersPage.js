@@ -1,113 +1,139 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // ← Важно: импорт навигации
+import { useNavigate } from 'react-router-dom';
+import { Container, Button, Table, Alert, Spinner, Card } from 'react-bootstrap';
+
+// 1. ІМПОРТУЄМО НАШІ ЦЕНТРАЛІЗОВАНІ АДМІНСЬКІ ФУНКЦІЇ
+import { fetchAllUsers, updateUser, deleteUser } from '../api';
 
 const AllUsersPage = () => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
+    const [users, setUsers] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState('');
     const navigate = useNavigate();
 
-    const token = localStorage.getItem('jwt');
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
-    const fetchUsers = async () => {
+    // 2. ОНОВЛЕНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ ДАНИХ
+    const fetchUsers = React.useCallback(async () => {
         setLoading(true);
+        setError('');
         try {
-            const response = await axios.get('http://localhost:8080/api/admin/users', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            console.log('Users from API:', response.data); // <- проверь структуру
+            const response = await fetchAllUsers();
             setUsers(response.data);
-        } catch {
-            setError('Помилка завантаження користувачів');
+        } catch (err) {
+            console.error('Помилка завантаження користувачів:', err);
+            setError(err.response?.data?.message || 'Не вдалося завантажити користувачів. Можливо, у вас недостатньо прав.');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleDelete = async (id) => {
-        console.log('Delete clicked, id:', id);
-        if (!id) {
-            console.error("id пользователя для удаления не задан");
+    React.useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setError('Будь ласка, увійдіть як адміністратор.');
+            setLoading(false);
+            navigate('/admin/login');
             return;
-
         }
+        fetchUsers();
+    }, [fetchUsers, navigate]);
+
+    // 3. ОНОВЛЕНІ ОБРОБНИКИ ПОДІЙ
+    const handleDelete = async (id) => {
+        if (!id) {
+            console.error("ID користувача для видалення не задано");
+            return;
+        }
+        if (window.confirm('Ви впевнені, що хочете видалити цього користувача?')) {
+            try {
+                await deleteUser(id);
+                setUsers(prev => prev.filter(user => user.id !== id));
+                alert('Користувача успішно видалено.');
+            } catch (e) {
+                console.error('Помилка видалення:', e);
+                alert('Не вдалося видалити користувача.');
+            }
+        }
+    };
+
+    const handleUpdate = async (user) => {
+        const newUsername = prompt("Введіть нове ім'я користувача:", user.username);
+        // Можна додати більше полів для оновлення
+        if (!newUsername) return;
+
         try {
-            await axios.delete(`http://localhost:8080/api/admin/delete/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUsers(prev => prev.filter(user => user.id !== id));
+            // Важливо: передаємо тільки ті дані, які хочемо змінити
+            await updateUser(user.id, { username: newUsername });
+            alert('Користувача успішно оновлено.');
+            fetchUsers(); // Оновлюємо таблицю
         } catch (e) {
-            console.error(e);
-            alert('Не вдалося видалити користувача');
+            console.error('Помилка оновлення:', e);
+            alert('Не вдалося оновити користувача.');
         }
     };
 
-    const handleUpdate = (user) => {
-        const newUsername = prompt("Нове ім'я користувача:", user.username);
-        const newPhone = prompt("Новий телефон:", user.phone);
+    // --- JSX-розмітка з покращеннями ---
 
-        if (!newUsername || !newPhone) return;
+    if (loading) {
+        return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
+    }
 
-        axios.put(`http://localhost:8080/api/admin/update/${user.id}`, {
-            ...user,
-            username: newUsername,
-            phone: newPhone
-        }, {
-            headers: { Authorization: `Bearer ${token}` }
-        }).then(() => {
-            fetchUsers(); // оновити таблицю
-        }).catch(() => {
-            alert('Не вдалося оновити користувача');
-        });
-    };
-
-    if (loading) return <p>Завантаження...</p>;
-    if (error) return <p className="text-danger">{error}</p>;
+    if (error) {
+        return (
+            <Container className="mt-5">
+                <Alert variant="danger">{error}</Alert>
+                <Button variant="secondary" onClick={() => navigate('/admin')}>
+                    ← Назад до адмін-панелі
+                </Button>
+            </Container>
+        );
+    }
 
     return (
-        <div className="container mt-5">
-            <button
-                className="btn btn-outline-secondary"
-                onClick={() => navigate('/admin')}
-            >
-                Назад
-            </button>
-            <h3>Список користувачів</h3>
-            <table className="table table-bordered">
-                <thead>
-                <tr>
-                    <th>Ім’я</th>
-                    <th>Телефон</th>
-                    <th>Ролі</th>
-                    <th>Дії</th>
-                </tr>
-                </thead>
-                <tbody>
-                {users.map(user => (
-                    <tr key={user.id}>
-                        <td>{user.username}</td>
-                        <td>{user.phone}</td>
-                        <td>{Array.isArray(user.roles) ? user.roles.join(', ') : user.roles}</td>
-                        <td>
-                            <td>
-                                <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdate(user)}>Редагувати</button>
-                                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(user.id)}>Видалити</button>
-                            </td>
+        <Container className="mt-5">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2>Керування користувачами</h2>
+                <Button variant="outline-secondary" onClick={() => navigate('/admin')}>
+                    ← Назад
+                </Button>
+            </div>
 
-
-                        </td>
-                    </tr>
-                ))}
-
-                </tbody>
-            </table>
-        </div>
+            <Card>
+                <Card.Body>
+                    <Table responsive striped bordered hover className="align-middle">
+                        <thead className="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Ім’я</th>
+                            <th>Телефон</th>
+                            <th>Ролі</th>
+                            <th className="text-center">Дії</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {users.map(user => (
+                            <tr key={user.id}>
+                                <td>{user.id}</td>
+                                <td>{user.username}</td>
+                                <td>{user.phone || '-'}</td>
+                                <td>
+                                    {Array.isArray(user.roles)
+                                        ? user.roles.join(', ')
+                                        : (typeof user.roles === 'string' ? user.roles : 'N/A')}
+                                </td>
+                                <td className="text-center">
+                                    <Button variant="warning" size="sm" className="me-2" onClick={() => handleUpdate(user)}>
+                                        Редагувати
+                                    </Button>
+                                    <Button variant="danger" size="sm" onClick={() => handleDelete(user.id)}>
+                                        Видалити
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
+        </Container>
     );
 };
 
