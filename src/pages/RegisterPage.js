@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
@@ -10,10 +10,10 @@ function RegisterPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const [form, setForm] = React.useState({ username: '', password: '', phone: '' });
-    const [error, setError] = React.useState('');
-    const [successMessage, setSuccessMessage] = React.useState('');
-    const [loading, setLoading] = React.useState(false);
+    const [form, setForm] = useState({ username: '', password: '', phone: '' });
+    const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,6 +29,7 @@ function RegisterPage() {
             await registerUser(form);
             setSuccessMessage(t('reg_success') + ' ' + t('reg_success_redirect'));
 
+            // Після успішної реєстрації перенаправляємо на сторінку входу
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
@@ -37,13 +38,16 @@ function RegisterPage() {
             console.error("Помилка реєстрації:", err);
 
             // ↓↓↓ ОСЬ КЛЮЧОВЕ ВИПРАВЛЕННЯ ↓↓↓
-            // Тепер ми очікуємо чітке повідомлення про помилку з бекенда
-            if (err.response && err.response.data && err.response.data.message) {
-                // Якщо бекенд повернув помилку з полем 'message'
-                // (як наш ResponseStatusException з `reason`)
-                setError(err.response.data.message);
+            // Універсальна і надійна обробка помилок від Axios
+            if (err.response) {
+                // Якщо є відповідь від сервера
+                // Спочатку шукаємо повідомлення в `err.response.data.message` (стандарт для Spring)
+                // Якщо його немає, шукаємо в `err.response.data` (якщо сервер повертає просто рядок)
+                // Якщо і його немає, показуємо загальне повідомлення
+                const errorMessage = err.response.data?.message || err.response.data || t('reg_fail');
+                setError(errorMessage);
             } else {
-                // Запасний варіант для інших типів помилок (наприклад, мережевих)
+                // Якщо відповіді від сервера немає взагалі (проблема з мережею)
                 setError(t('reg_server_error'));
             }
         } finally {
@@ -60,7 +64,7 @@ function RegisterPage() {
                     {error && <Alert variant="danger">{error}</Alert>}
                     {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
-                    <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleSubmit} noValidate>
                         <Form.Group className="mb-3">
                             <Form.Label>{t('reg_field_username')}</Form.Label>
                             <Form.Control
