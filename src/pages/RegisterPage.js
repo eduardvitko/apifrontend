@@ -10,10 +10,11 @@ function RegisterPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const [form, setForm] = useState({ username: '', password: '', phone: '' });
+    // Додано поле 'email' до початкового стану
+    const [form, setForm] = useState({ username: '', email: '', password: '', phone: '' });
     const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(''); // Додано для повідомлення про успіх
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,28 +27,33 @@ function RegisterPage() {
         setLoading(true);
 
         try {
-            await registerUser(form);
-            setSuccessMessage(t('reg_success') + ' ' + t('reg_success_redirect'));
+            // 1. Викликаємо registerUser, який тепер повертає відповідь з токеном
+            const response = await registerUser(form);
 
-            // Після успішної реєстрації перенаправляємо на сторінку входу
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
+            // 2. Перевіряємо, чи є в відповіді токен
+            if (response.data && response.data.token) {
+                // 3. Зберігаємо токен в localStorage
+                localStorage.setItem('token', response.data.token);
+
+                // Сповіщаємо інші компоненти (наприклад, Navbar) про зміну статусу
+                window.dispatchEvent(new Event("storage"));
+
+                // Показуємо повідомлення про успіх
+                setSuccessMessage("Реєстрація успішна! Зараз ви будете перенаправлені в профіль...");
+
+                // 4. Перенаправляємо в профіль через 2 секунди
+                setTimeout(() => {
+                    navigate('/profile');
+                }, 2000);
+            } else {
+                setError('Реєстрація пройшла, але не вдалося увійти в систему.');
+            }
 
         } catch (err) {
             console.error("Помилка реєстрації:", err);
-
-            // ↓↓↓ ОСЬ КЛЮЧОВЕ ВИПРАВЛЕННЯ ↓↓↓
-            // Універсальна і надійна обробка помилок від Axios
-            if (err.response) {
-                // Якщо є відповідь від сервера
-                // Спочатку шукаємо повідомлення в `err.response.data.message` (стандарт для Spring)
-                // Якщо його немає, шукаємо в `err.response.data` (якщо сервер повертає просто рядок)
-                // Якщо і його немає, показуємо загальне повідомлення
-                const errorMessage = err.response.data?.message || err.response.data || t('reg_fail');
-                setError(errorMessage);
+            if (err.response?.data?.message) {
+                setError(err.response.data.message);
             } else {
-                // Якщо відповіді від сервера немає взагалі (проблема з мережею)
                 setError(t('reg_server_error'));
             }
         } finally {
@@ -75,6 +81,20 @@ function RegisterPage() {
                                 autoFocus
                             />
                         </Form.Group>
+
+                        {/* ↓↓↓ Додано повний набір полів форми ↓↓↓ */}
+                        <Form.Group className="mb-3">
+                            <Form.Label>Email</Form.Label>
+                            <Form.Control
+                                type="email"
+                                name="email"
+                                value={form.email}
+                                onChange={handleChange}
+                                required
+                                placeholder="example@mail.com"
+                            />
+                        </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label>{t('reg_field_phone')}</Form.Label>
                             <Form.Control
@@ -85,6 +105,7 @@ function RegisterPage() {
                                 required
                             />
                         </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label>{t('reg_field_password')}</Form.Label>
                             <Form.Control
@@ -95,6 +116,8 @@ function RegisterPage() {
                                 required
                             />
                         </Form.Group>
+                        {/* ↑↑↑ Кінець полів форми ↑↑↑ */}
+
                         <Button className="w-100" type="submit" disabled={loading || successMessage}>
                             {loading ? (
                                 <>
