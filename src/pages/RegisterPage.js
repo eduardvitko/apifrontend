@@ -1,4 +1,4 @@
-import React from 'react'; // <-- ОСЬ ВИПРАВЛЕННЯ: прибрано зайву кому
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
@@ -35,9 +35,15 @@ function RegisterPage() {
 
         } catch (err) {
             console.error("Помилка реєстрації:", err);
+
+            // ↓↓↓ ОСЬ КЛЮЧОВЕ ВИПРАВЛЕННЯ ↓↓↓
+            // Тепер ми очікуємо чітке повідомлення про помилку з бекенда
             if (err.response && err.response.data && err.response.data.message) {
+                // Якщо бекенд повернув помилку з полем 'message'
+                // (як наш ResponseStatusException з `reason`)
                 setError(err.response.data.message);
             } else {
+                // Запасний варіант для інших типів помилок (наприклад, мережевих)
                 setError(t('reg_server_error'));
             }
         } finally {
