@@ -1,6 +1,6 @@
-import React, from 'react';
+import React from 'react'; // <-- ОСЬ ВИПРАВЛЕННЯ: прибрано зайву кому
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom'; // Імпортуємо useNavigate
+import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
 
 // Імпортуємо нашу централізовану функцію
@@ -8,10 +8,10 @@ import { registerUser } from '../api';
 
 function RegisterPage() {
     const { t } = useTranslation();
-    const navigate = useNavigate(); // Створюємо екземпляр navigate
+    const navigate = useNavigate();
 
     const [form, setForm] = React.useState({ username: '', password: '', phone: '' });
-    const [error, setError] = React.useState(''); // Єдиний стан для повідомлень про помилки
+    const [error, setError] = React.useState('');
     const [successMessage, setSuccessMessage] = React.useState('');
     const [loading, setLoading] = React.useState(false);
 
@@ -25,35 +25,19 @@ function RegisterPage() {
         setSuccessMessage('');
         setLoading(true);
 
-        // --- Валідація на фронтенді (залишається без змін) ---
-        // Це добре, що вона є, вона зменшує кількість непотрібних запитів до сервера.
-        const usernameRegex = /^[a-zA-Zа-яА-ЯіїєІЇЄґҐ' -]+$/;
-        if (!usernameRegex.test(form.username)) {
-            setError(t('reg_error_username'));
-            setLoading(false);
-            return;
-        }
-        // ... (можна додати й інші перевірки)
-
         try {
             await registerUser(form);
             setSuccessMessage(t('reg_success') + ' ' + t('reg_success_redirect'));
 
-            // Після успішної реєстрації перенаправляємо на сторінку входу через 2 секунди
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
 
         } catch (err) {
             console.error("Помилка реєстрації:", err);
-
-            // ↓↓↓ ОСЬ КЛЮЧОВЕ ВИПРАВЛЕННЯ ↓↓↓
-            // Тепер ми очікуємо чітке повідомлення про помилку з бекенда
             if (err.response && err.response.data && err.response.data.message) {
-                // Якщо бекенд повернув помилку з полем 'message' (як наш ResponseStatusException)
                 setError(err.response.data.message);
             } else {
-                // Запасний варіант для інших типів помилок
                 setError(t('reg_server_error'));
             }
         } finally {
@@ -67,10 +51,7 @@ function RegisterPage() {
                 <Card.Body>
                     <h3 className="mb-4 text-center">📝 {t('reg_title')}</h3>
 
-                    {/* Повідомлення про помилку */}
                     {error && <Alert variant="danger">{error}</Alert>}
-
-                    {/* Повідомлення про успіх */}
                     {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
                     <Form onSubmit={handleSubmit}>
