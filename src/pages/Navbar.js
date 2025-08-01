@@ -74,7 +74,7 @@ const Navbar = () => {
                                 <Nav.Link as={Link} to="/login">{t('login')}</Nav.Link>
                             </>
                         )}
-                        <Nav.Link as={Link} to="/categories/all">{t('categories')}</Nav.Link>
+                        <Nav.Link as={Link} to="/categories/all">{t('catalog')}</Nav.Link>
                     </Nav>
 
                     {/* Пошук, кошик, мова та кнопка виходу */}
