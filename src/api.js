@@ -73,6 +73,7 @@ export const deleteImage = (imageId) => api.delete(`/api/images/delete/${imageId
 // Публічні (з ProductController)
 export const fetchAllProducts = () => api.get('/api/products/all');
 export const fetchProductsByCategory = (categoryId) => api.get(`/api/products/by-category/${categoryId}`);
+export const searchProducts = (query) => api.get(`/api/products/search?q=${query}`);
 // Адмінські (з AdminController)
 export const createProduct = (productData) => api.post('/api/admin/create/product', productData);
 export const fetchAdminProducts = () => api.get('/api/admin/all/products');

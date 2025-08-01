@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Card, Button, Form, Alert, Spinner } from 'react-bootstrap';
 
+// 1. ІМПОРТУЄМО нашу централізовану функцію
+import { searchProducts as searchProductsAPI } from '../api';
+
+// Допоміжний хук для отримання параметрів з URL
 function useQuery() {
     return new URLSearchParams(useLocation().search);
 }
@@ -9,101 +13,105 @@ function useQuery() {
 const SearchResultsPage = () => {
     const query = useQuery();
     const searchTerm = query.get('q');
-    const [products, setProducts] = useState([]);
-    const [quantities, setQuantities] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!searchTerm) return;
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-        const fetchProducts = async () => {
-            setLoading(true);
-            try {
-                const res = await axios.get(`http://localhost:8080/api/products/search?q=${encodeURIComponent(searchTerm)}`);
-                const filtered = res.data.filter(
-                    p => p.images?.length > 0 && p.price > 0 && p.stock > 0
-                );
-                setProducts(filtered);
-                const qtyObj = {};
-                filtered.forEach(p => qtyObj[p.id] = 1);
-                setQuantities(qtyObj);
-            } catch (e) {
-                setError('Помилка завантаження товарів');
-            } finally {
-                setLoading(false);
+    const fetchProducts = useCallback(async () => {
+        if (!searchTerm) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        setError('');
+        try {
+            // 2. ВИКОРИСТОВУЄМО нашу централізовану функцію
+            const response = await searchProductsAPI(searchTerm);
+            // Фільтрацію можна залишити, якщо це ваша бізнес-логіка
+            const filtered = response.data.filter(p => p.images?.length > 0 && p.price > 0 && p.stock > 0);
+            setProducts(filtered);
+        } catch (e) {
+            console.error('Помилка пошуку товарів:', e);
+            if (e.response && e.response.status === 404) {
+                setProducts([]); // Якщо нічого не знайдено, показуємо порожній список
+            } else {
+                setError('Помилка завантаження товарів.');
             }
-        };
-
-        fetchProducts();
+        } finally {
+            setLoading(false);
+        }
     }, [searchTerm]);
 
-    const handleQuantityChange = (productId, value) => {
-        if (value >= 1) {
-            setQuantities(prev => ({ ...prev, [productId]: value }));
-        }
-    };
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
     const addToCart = (product) => {
-        const qty = quantities[product.id] || 1;
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const idx = cart.findIndex(i => i.productId === product.id);
         if (idx >= 0) {
-            cart[idx].quantity += qty;
+            cart[idx].quantity += 1;
         } else {
-            cart.push({ productId: product.id, name: product.name, price: product.price, quantity: qty });
+            cart.push({
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+                imageUrl: product.images && product.images.length > 0 ? product.images[0].url : null
+            });
         }
         localStorage.setItem('cart', JSON.stringify(cart));
-        alert(`Додано ${qty} шт. ${product.name} в корзину`);
+        alert(`Додано "${product.name}" в корзину`);
         navigate('/cart');
     };
 
-    if (!searchTerm) return <p>Введіть пошуковий запит</p>;
-    if (loading) return <p>Завантаження...</p>;
-    if (error) return <p className="text-danger">{error}</p>;
+    // --- JSX-розмітка з покращеннями ---
+
+    if (loading) {
+        return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
+    }
+
+    if (error) {
+        return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
+    }
 
     return (
-        <div className="container mt-4">
-            <h3>Результати пошуку для: "{searchTerm}"</h3>
+        <Container className="mt-4">
+            <h3 className="mb-4">Результати пошуку для: "{searchTerm}"</h3>
             {products.length === 0 ? (
-                <p>Товарів не знайдено.</p>
+                <Alert variant="info">За вашим запитом товарів не знайдено.</Alert>
             ) : (
-                <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                <Row xs={1} sm={2} md={3} lg={4} className="g-4">
                     {products.map(product => (
-                        <div className="col" key={product.id}>
-                            <div className="card h-100">
-                                <img
+                        <Col key={product.id}>
+                            <Card className="h-100 shadow-sm">
+                                <Card.Img
+                                    variant="top"
                                     src={product.images[0].url}
                                     alt={product.images[0].altText || product.name}
-                                    className="card-img-top"
                                     style={{ height: 200, objectFit: 'cover' }}
                                 />
-                                <div className="card-body d-flex flex-column">
-                                    <h5>{product.name}</h5>
-                                    <p>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(product.price)}</p>
-                                    <p>На складі: {product.stock}</p>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max={product.stock}
-                                        value={quantities[product.id] || 1}
-                                        onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value))}
-                                        className="form-control mb-2"
-                                    />
-                                    <button
-                                        className="btn btn-primary mt-auto"
-                                        onClick={() => addToCart(product)}
-                                    >
-                                        Додати в корзину
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                                <Card.Body className="d-flex flex-column">
+                                    <Card.Title>{product.name}</Card.Title>
+                                    <div className="mt-auto">
+                                        <p className="fw-bold fs-5">{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(product.price)}</p>
+                                        <Button
+                                            variant="primary"
+                                            className="w-100"
+                                            onClick={() => addToCart(product)}
+                                        >
+                                            Додати в кошик
+                                        </Button>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
                     ))}
-                </div>
+                </Row>
             )}
-        </div>
+        </Container>
     );
 };
 
