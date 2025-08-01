@@ -18,6 +18,8 @@ const resources = {
             Login:"Login",
             Password:"password",
             Sign_in:"sign in",
+            orders:"orders" ,
+            cart:"cart",
 
     "login_title": "Login",
     "login_error": "❌ Invalid username or password.",
@@ -98,6 +100,8 @@ const resources = {
             Login: "увійти",
             Password:"пароль",
             Sign_in:"Вхід до облікового запису",
+            orders:"замовлення",
+            cart:"корзина",
 
     "login_title": "Вхід",
     "login_error": "❌ Невірний логін або пароль.",
