@@ -58,7 +58,7 @@ const CreateProductPage = () => {
             await createProduct(productData);
 
             // У разі успіху перенаправляємо на сторінку всіх товарів
-            navigate('/admin/products');
+            navigate('/admin/products/all');
         } catch (err) {
             console.error('Помилка при створенні товару:', err);
             setError('Помилка при створенні товару. Перевірте консоль для деталей.');
