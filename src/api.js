@@ -97,6 +97,7 @@ export const markOrderAsPaid = (orderId) => api.put(`/api/orders/${orderId}/pay`
 export const updateOrderAddress = (orderId, addressId) => api.put(`/api/orders/${orderId}/address/${addressId}`);
 // Адмінські
 export const fetchAllOrdersAdmin = () => api.get('/api/admin/orders');
+export const fetchAllOrdersWithAddressAdmin = () => api.get('/api/orders/all/with-address');
 
 
 // --- 7. Платежі (Payments) ---
