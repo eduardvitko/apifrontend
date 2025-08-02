@@ -108,7 +108,7 @@ const CreateProductPage = () => {
                             </select>
                         </div>
                         <button type="submit" className="btn btn-success">Створити</button>
-                        <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/admin/products')}>
+                        <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/admin/products/all')}>
                             Назад
                         </button>
                     </form>
