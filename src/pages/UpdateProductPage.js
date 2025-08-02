@@ -1,45 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Container, Card, Form, Button, Alert, Spinner, Row, Col } from 'react-bootstrap';
+
+// 1. ІМПОРТУЄМО наші централізовані функції
+import { fetchAdminProductById, fetchAdminCategories, updateProduct } from '../api';
 
 const UpdateProductPage = () => {
-    const [product, setProduct] = useState(null);
-    const [categories, setCategories] = useState([]);
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(true);
-
     const { id } = useParams();
     const navigate = useNavigate();
-    const token = localStorage.getItem('jwt');
 
-    useEffect(() => {
-        fetchProduct();
-        fetchCategories();
-    }, []);
+    const [product, setProduct] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fetchProduct = async () => {
+    // Єдина функція для завантаження початкових даних
+    const loadData = useCallback(async () => {
+        if (!id) {
+            navigate('/admin/products');
+            return;
+        }
+        setLoading(true);
+        setError('');
         try {
-            const response = await axios.get(`http://localhost:8080/api/admin/product/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setProduct(response.data);
-        } catch {
-            setError('Не вдалося завантажити товар');
+            const [productRes, categoriesRes] = await Promise.all([
+                fetchAdminProductById(id),
+                fetchAdminCategories()
+            ]);
+
+            const productData = {
+                ...productRes.data,
+                // Важливо: categoryId може бути об'єктом, беремо з нього ID
+                categoryId: productRes.data.category?.id || ''
+            };
+            setProduct(productData);
+            setCategories(categoriesRes.data);
+        } catch (err) {
+            setError('Не вдалося завантажити дані. Товар або категорії не знайдено.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, navigate]);
 
-    const fetchCategories = async () => {
-        try {
-            const response = await axios.get('http://localhost:8080/api/admin/all/categories', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCategories(response.data);
-        } catch {
-            setError('Не вдалося завантажити категорії');
-        }
-    };
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -49,97 +55,96 @@ const UpdateProductPage = () => {
         }));
     };
 
+    // Оновлений обробник відправки форми
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setIsSubmitting(true);
+
         try {
-            await axios.put(`http://localhost:8080/api/admin/update/product/${id}`, {
-                ...product,
+            // Готуємо дані, перетворюючи рядки на числа
+            const dataToSend = {
+                name: product.name,
+                description: product.description,
                 price: parseFloat(product.price),
                 stock: parseInt(product.stock),
                 categoryId: parseInt(product.categoryId)
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            };
+
+            await updateProduct(id, dataToSend);
+            alert('Товар успішно оновлено!');
             navigate('/admin/products');
-        } catch {
-            setError('Помилка при оновленні товару');
+        } catch (err) {
+            console.error('Помилка при оновленні товару:', err);
+            setError(err.response?.data?.message || 'Помилка при оновленні товару.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (loading) return <p>Завантаження...</p>;
-    if (!product) return <p className="text-danger">Товар не знайдено</p>;
+    if (loading) {
+        return <Container className="text-center mt-5"><Spinner animation="border" /></Container>;
+    }
+
+    if (error || !product) {
+        return (
+            <Container className="mt-5">
+                <Alert variant="danger">{error || 'Товар не знайдено.'}</Alert>
+                <Button variant="secondary" onClick={() => navigate('/admin/products')}>
+                    ← Назад до списку товарів
+                </Button>
+            </Container>
+        );
+    }
 
     return (
-        <div className="container mt-5">
-            <h3>Редагувати товар</h3>
-            {error && <p className="text-danger">{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                    <label className="form-label">Назва</label>
-                    <input
-                        type="text"
-                        name="name"
-                        className="form-control"
-                        value={product.name}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Опис</label>
-                    <textarea
-                        name="description"
-                        className="form-control"
-                        value={product.description}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Ціна</label>
-                    <input
-                        type="number"
-                        name="price"
-                        className="form-control"
-                        value={product.price}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Залишок</label>
-                    <input
-                        type="number"
-                        name="stock"
-                        className="form-control"
-                        value={product.stock}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Категорія</label>
-                    <select
-                        name="categoryId"
-                        className="form-select"
-                        value={product.categoryId}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="">Оберіть категорію</option>
-                        {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <button type="submit" className="btn btn-primary">Зберегти</button>
-                <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/admin/products')}>
-                    Назад
-                </button>
-            </form>
-        </div>
+        <Container className="mt-5">
+            <Row className="justify-content-center">
+                <Col md={8} lg={6}>
+                    <Card className="shadow-lg">
+                        <Card.Header as="h3">Редагувати товар: {product.name}</Card.Header>
+                        <Card.Body>
+                            <Form onSubmit={handleSubmit}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Назва</Form.Label>
+                                    <Form.Control type="text" name="name" value={product.name || ''} onChange={handleChange} required />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Опис</Form.Label>
+                                    <Form.Control as="textarea" rows={3} name="description" value={product.description || ''} onChange={handleChange} required />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Ціна</Form.Label>
+                                    <Form.Control type="number" step="0.01" name="price" value={product.price || ''} onChange={handleChange} required />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Кількість на складі</Form.Label>
+                                    <Form.Control type="number" name="stock" value={product.stock || ''} onChange={handleChange} required min="0" />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Категорія</Form.Label>
+                                    <Form.Select name="categoryId" value={product.categoryId || ''} onChange={handleChange} required>
+                                        <option value="">Оберіть категорію</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                                <div className="d-flex justify-content-between mt-4">
+                                    <Button variant="secondary" onClick={() => navigate('/admin/products')}>Назад</Button>
+                                    <Button variant="primary" type="submit" disabled={isSubmitting}>
+                                        {isSubmitting ?
+                                            <><Spinner as="span" animation="border" size="sm" /> Збереження...</> :
+                                            'Зберегти зміни'
+                                        }
+                                    </Button>
+                                </div>
+                            </Form>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+        </Container>
     );
 };
 

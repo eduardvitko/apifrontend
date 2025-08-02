@@ -79,7 +79,7 @@ export const createProduct = (productData) => api.post('/api/admin/create/produc
 export const fetchAdminProducts = () => api.get('/api/admin/all/products');
 export const updateProduct = (id, productData) => api.put(`/api/admin/update/product/${id}`, productData);
 export const deleteProduct = (id) => api.delete(`/api/admin/delete/product/${id}`);
-
+export const fetchAdminProductById = (id) => api.get(`/api/admin/product/${id}`);
 
 // --- 5. Адреси ---
 // ВИКОРИСТОВУЄМО ІСНУЮЧИЙ ЕНДПОІНТ, ЩО ПРИЙМАЄ userId
