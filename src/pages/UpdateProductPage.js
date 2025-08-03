@@ -73,7 +73,7 @@ const UpdateProductPage = () => {
 
             await updateProduct(id, dataToSend);
             alert('Товар успішно оновлено!');
-            navigate('/admin/products');
+            navigate('/admin/products/all');
         } catch (err) {
             console.error('Помилка при оновленні товару:', err);
             setError(err.response?.data?.message || 'Помилка при оновленні товару.');
