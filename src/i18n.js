@@ -78,6 +78,8 @@ const resources = {
 
             "your_cart": "your_cart",
             "remove": "remove",
+            "cart_empty": "cart_empty",
+            "to_shopping":"to_shopping",
             "quantity": "quantity",
             "total": "total",
             checkout:"checkout",
@@ -159,7 +161,9 @@ const resources = {
             not_authorized: "Ви не авторизовані",
             fetch_error: "Не вдалося завантажити товари",
 
-            "your_cart": "Корзина",
+            "your_cart": "Кошик",
+            "cart_empty": "кошик пустий",
+            "to_shopping":"до покупок",
             "remove": "видалити",
             "quantity": "кількість",
             "total": "всього",
