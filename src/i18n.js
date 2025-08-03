@@ -30,6 +30,7 @@ const resources = {
 
     "reg_title": "Register",
     "reg_field_username": "Username",
+            "reg_field_email":"Email",
     "reg_field_phone": "Phone",
     "reg_field_password": "Password",
     "reg_button": "Register",
@@ -103,7 +104,7 @@ const resources = {
             Password:"пароль",
             Sign_in:"Вхід до облікового запису",
             orders:"замовлення",
-            cart:"корзина",
+            cart:"кошик",
 
     "login_title": "Вхід",
     "login_error": "❌ Невірний логін або пароль.",
@@ -114,6 +115,7 @@ const resources = {
 
     "reg_title": "Реєстрація",
     "reg_field_username": "Ім’я користувача",
+            "reg_field_email":"Пошта",
     "reg_field_phone": "Телефон",
     "reg_field_password": "Пароль",
     "reg_button": "Зареєструватися",
