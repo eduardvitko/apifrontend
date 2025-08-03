@@ -116,7 +116,7 @@ const resources = {
 
     "reg_title": "Реєстрація",
     "reg_field_username": "Ім’я користувача",
-            email:"Пошта",
+    "reg_field_email":"Пошта",
     "reg_field_phone": "Телефон",
     "reg_field_password": "Пароль",
     "reg_button": "Зареєструватися",
